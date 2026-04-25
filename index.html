@@ -527,16 +527,7 @@
 <body>
 
 <!-- ════════ LOGIN ════════ -->
-<div id="auth-screen">
-  <div class="auth-card">
-    <h1 class="auth-title">Mis Gastos</h1>
-    <p class="auth-sub">Ingresá para continuar</p>
-    <div id="auth-err" class="auth-error"></div>
-    <div class="field">
-      <label>Contraseña</label>
-      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password"
-        onkeydown="if(event.key==='Enter') doLogin()">
-    </div>
+<div id="auth-screen" style="display:none"></div>
     <button class="btn btn-primary btn-full" onclick="doLogin()">Entrar</button>
   </div>
 </div>
@@ -671,18 +662,16 @@ onAuthStateChanged(auth, u => {
   }
 });
 
-window.doLogin = async () => {
-  const email = "juanimm91@gmail.com";
-  const pass  = q("l-pass").value;
-  const err   = q("auth-err");
-  err.style.display = "none";
+window.doLogin = async () => {};
+
+// Auto-login
+(async () => {
   try {
-    await signInWithEmailAndPassword(auth, email, pass);
+    await signInWithEmailAndPassword(auth, "juanimm91@gmail.com", "123456");
   } catch(e) {
-    err.style.display = "block";
-    err.textContent = "Contraseña incorrecta.";
+    console.error("Auto-login failed:", e);
   }
-};
+})();
 
 window.doLogout = () => signOut(auth);
 
