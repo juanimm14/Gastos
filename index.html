@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Gastos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║              INSTRUCCIONES DE CONFIGURACIÓN                       ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                  ║
+║  1. FIREBASE CONSOLE → https://console.firebase.google.com       ║
+║     • Crear proyecto nuevo                                       ║
+║     • Agregar app web (</>)                                      ║
+║     • Copiar la config y pegar en firebaseConfig abajo           ║
+║                                                                  ║
+║  2. AUTENTICACIÓN                                                ║
+║     • Authentication → Sign-in method → Email/Password → ON     ║
+║     • Authentication → Users → Add user → tu email + contraseña ║
+║                                                                  ║
+║  3. BASE DE DATOS                                                ║
+║     • Firestore Database → Crear base de datos → Modo producción ║
+║                                                                  ║
+║  4. REGLAS DE SEGURIDAD (Firestore → Rules → Publicar)          ║
+║     ─────────────────────────────────────────────────           ║
+║     rules_version = '2';                                         ║
+║     service cloud.firestore {                                    ║
+║       match /databases/{database}/documents {                    ║
+║         match /{document=**} {                                   ║
+║           allow read, write: if request.auth != null             ║
+║             && request.auth.uid == "TU_UID_AQUI";               ║
+║         }                                                        ║
+║       }                                                          ║
+║     }                                                            ║
+║     ─────────────────────────────────────────────────           ║
+║     Para obtener tu UID: logearte → consola F12 →               ║
+║       firebase.auth().currentUser.uid                            ║
+║                                                                  ║
+║  5. GITHUB PAGES                                                 ║
+║     • Crear repo → subir este archivo como index.html           ║
+║     • Settings → Pages → Branch: main → Save                    ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+-->
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --surface: #f7f7f5;
+    --border: #e8e8e4;
+    --text: #1a1a1a;
+    --text-soft: #6b6b65;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --amber: #d97706;
+    --amber-light: #fffbeb;
+    --purple: #7c3aed;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ─── AUTH ─────────────────────────────────────── */
+  #auth-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .auth-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: var(--shadow-md);
+  }
+
+  .auth-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+
+  .auth-sub {
+    color: var(--text-soft);
+    font-size: 13px;
+    margin-bottom: 28px;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="number"],
+  select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
+  }
+
+  .auth-error {
+    background: var(--red-light);
+    border: 1px solid #fecaca;
+    color: var(--red);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  /* ─── BUTTONS ───────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-ghost { background: transparent; color: var(--text-soft); border-color: var(--border); }
+  .btn-ghost:hover { background: var(--surface); color: var(--text); }
+  .btn-danger { background: var(--red-light); color: var(--red); border-color: #fecaca; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-success { background: var(--green-light); color: var(--green); border-color: #bbf7d0; }
+  .btn-success:hover { background: #dcfce7; }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-icon { padding: 4px 7px; font-size: 13px; }
+
+  /* ─── APP LAYOUT ─────────────────────────────────── */
+  #app { display: none; min-height: 100vh; flex-direction: column; }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    box-shadow: var(--shadow);
+  }
+
+  .header-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+  }
+
+  /* ─── MES STRIP ─────────────────────────────────── */
+  .mes-strip {
+    position: sticky;
+    top: 56px;
+    z-index: 90;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .mes-nav { display: flex; align-items: center; gap: 6px; }
+
+  .mes-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-soft);
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .mes-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+  .mes-pill {
+    background: var(--accent);
+    color: white;
+    border-radius: 20px;
+    padding: 3px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  .mes-full {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--text);
+  }
+
+  /* ─── RESUMEN BAR ───────────────────────────────── */
+  .resumen-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    gap: 0;
+    flex-wrap: wrap;
+    overflow-x: auto;
+  }
+
+  .rb-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 4px 18px 4px 0;
+    margin-right: 18px;
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .rb-item:last-child { border-right: none; margin-right: 0; }
+  .rb-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-soft); font-weight: 600; }
+  .rb-val { font-size: 15px; font-weight: 600; }
+
+  /* ─── MAIN ──────────────────────────────────────── */
+  main {
+    flex: 1;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* ─── SECCIÓN ───────────────────────────────────── */
+  .seccion {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .sec-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    gap: 8px;
+  }
+
+  .sec-header-left { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .sec-titulo { font-weight: 600; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sec-header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .sec-total { font-size: 13px; font-weight: 600; color: var(--text-soft); }
+  .sec-chevron { font-size: 11px; color: var(--text-soft); transition: transform 0.2s; }
+
+  .seccion.collapsed .sec-chevron { transform: rotate(-90deg); }
+  .seccion.collapsed .sec-body { display: none; }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .d-blue   { background: var(--accent); }
+  .d-red    { background: var(--red); }
+  .d-green  { background: var(--green); }
+  .d-amber  { background: var(--amber); }
+  .d-purple { background: var(--purple); }
+
+  /* ─── ITEMS ─────────────────────────────────────── */
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto auto;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  .item-row:last-child { border-bottom: none; }
+  .item-row:hover { background: #fafaf8; }
+
+  .ic { padding: 8px 12px; font-size: 13px; }
+  .ic-nombre { color: var(--text); }
+  .ic-cuotas { color: var(--text-soft); font-size: 11px; white-space: nowrap; }
+  .ic-monto  { font-weight: 500; white-space: nowrap; text-align: right; }
+  .ic-estado { text-align: center; white-space: nowrap; }
+  .ic-acciones { display: flex; gap: 3px; padding: 5px 8px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    border-radius: 12px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition: background 0.12s;
+  }
+
+  .badge-ok  { background: var(--green-light); color: var(--green); border-color: #bbf7d0; }
+  .badge-ok:hover { background: #dcfce7; }
+  .badge-no  { background: var(--red-light); color: var(--red); border-color: #fecaca; }
+  .badge-no:hover { background: #fee2e2; }
+
+  .empty-msg {
+    padding: 12px 16px;
+    color: var(--text-soft);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  /* ─── ADD ROW ───────────────────────────────────── */
+  .add-row {
+    display: flex;
+    gap: 6px;
+    padding: 9px 12px;
+    background: #fafaf8;
+    border-top: 1px dashed var(--border);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .add-row input, .add-row select {
+    flex: 1;
+    min-width: 90px;
+    padding: 6px 9px;
+    font-size: 13px;
+  }
+
+  .add-row .inp-cuotas { max-width: 90px; flex: 0 0 90px; }
+  .add-row .inp-monto  { max-width: 120px; flex: 0 0 120px; }
+
+  /* ─── COBRADO ───────────────────────────────────── */
+  .cobrado-val { color: var(--green); font-weight: 500; }
+
+  /* ─── RESUMEN FINAL ─────────────────────────────── */
+  .resumen-final {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .rf-header {
+    padding: 11px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .rf-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .rf-celda {
+    padding: 14px 16px;
+    border-right: 1px solid var(--border);
+  }
+
+  .rf-celda:last-child { border-right: none; }
+  .rf-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); margin-bottom: 4px; font-weight: 600; }
+  .rf-val   { font-size: 20px; font-weight: 700; }
+
+  /* ─── MODAL ─────────────────────────────────────── */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.38);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    overflow: hidden;
+    animation: modalIn 0.18s ease;
+  }
+
+  @keyframes modalIn { from { opacity:0; transform: scale(0.96); } }
+
+  .modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-close {
+    background: none; border: none; font-size: 22px; cursor: pointer;
+    color: var(--text-soft); line-height: 1; padding: 0;
+  }
+
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 13px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* ─── TOAST ─────────────────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1a1a1a;
+    color: white;
+    padding: 9px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 999;
+    transition: transform 0.28s ease;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ─── LOADING ───────────────────────────────────── */
+  .loading-wrap {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(255,255,255,0.75);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-direction: column;
+  }
+
+  .loading-wrap.show { display: flex; }
+
+  .spinner {
+    width: 34px; height: 34px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── RESPONSIVE ────────────────────────────────── */
+  @media (max-width: 580px) {
+    header, .mes-strip { padding-left: 14px; padding-right: 14px; }
+    main { padding: 12px 14px; }
+    .ic { padding: 7px 9px; }
+    .ic-cuotas { display: none; }
+    .item-row { grid-template-columns: 1fr auto auto auto; }
+    .rf-grid { grid-template-columns: 1fr 1fr; }
+    .rf-celda:nth-child(2) { border-right: none; }
+    .rf-celda:nth-child(3) { grid-column: 1/-1; border-top: 1px solid var(--border); border-right: none; }
+    .resumen-bar { padding: 8px 14px; }
+    .rb-item { padding-right: 12px; margin-right: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════ LOGIN ════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1 class="auth-title">Mis Gastos</h1>
+    <p class="auth-sub">Ingresá para continuar</p>
+    <div id="auth-err" class="auth-error"></div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="l-email" placeholder="tu@email.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- ════════ APP ════════ -->
+<div id="app">
+
+  <header>
+    <span class="header-title">Mis Gastos</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost btn-sm" onclick="abrirCopiarMes()">📋 Copiar mes ant.</button>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <div class="mes-strip">
+    <div class="mes-nav">
+      <button class="mes-btn" onclick="cambiarMes(-1)">‹</button>
+      <span class="mes-pill" id="mes-pill">—</span>
+      <button class="mes-btn" onclick="cambiarMes(1)">›</button>
+    </div>
+    <span class="mes-full" id="mes-full">—</span>
+  </div>
+
+  <div class="resumen-bar" id="resumen-bar">
+    <div class="rb-item">
+      <span class="rb-label">Total gastos</span>
+      <span class="rb-val" id="rb-total" style="color:var(--red)">$0</span>
+    </div>
+    <div class="rb-item">
+      <span class="rb-label">Cobrado</span>
+      <span class="rb-val" id="rb-cobrado" style="color:var(--green)">$0</span>
+    </div>
+    <div class="rb-item">
+      <span class="rb-label">Quedan</span>
+      <span class="rb-val" id="rb-quedan">$0</span>
+    </div>
+    <div class="rb-item">
+      <span class="rb-label">Pagado</span>
+      <span class="rb-val" id="rb-pagado" style="color:var(--green)">$0</span>
+    </div>
+    <div class="rb-item">
+      <span class="rb-label">Pendiente</span>
+      <span class="rb-val" id="rb-pendiente" style="color:var(--amber)">$0</span>
+    </div>
+  </div>
+
+  <main id="main"></main>
+</div>
+
+<div id="toast"></div>
+
+<div class="loading-wrap" id="loading">
+  <div class="spinner"></div>
+  <span style="font-size:13px;color:var(--text-soft)">Cargando...</span>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span id="m-titulo">—</span>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-footer" id="m-footer"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+                     FIREBASE + LÓGICA
+════════════════════════════════════════════════════ -->
+<script type="module">
+
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ──────────────────────────────────────────────────────
+   🔧  REEMPLAZÁ ESTOS VALORES CON TU CONFIG DE FIREBASE
+   ────────────────────────────────────────────────────── */
+const firebaseConfig = {
+  apiKey:            "PEGAR_apiKey",
+  authDomain:        "PEGAR_authDomain",
+  projectId:         "PEGAR_projectId",
+  storageBucket:     "PEGAR_storageBucket",
+  messagingSenderId: "PEGAR_messagingSenderId",
+  appId:             "PEGAR_appId"
+};
+/* ──────────────────────────────────────────────────── */
+
+const fapp = initializeApp(firebaseConfig);
+const auth = getAuth(fapp);
+const db   = getFirestore(fapp);
+
+// ── Constantes ────────────────────────────────────────
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
+               "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+const SECCIONES_BASE = () => [
+  { id:"alquiler",  titulo:"Alquiler / Vivienda",  dot:"d-blue"   },
+  { id:"servicios", titulo:"Servicios",             dot:"d-amber"  },
+  { id:"extras",    titulo:"Extras y Variables",    dot:"d-purple" },
+  { id:"debito",    titulo:"Débito / Red Link",     dot:"d-red"    },
+  { id:"naranja",   titulo:"Tarjeta Naranja",       dot:"d-red"    },
+  { id:"nativa",    titulo:"Tarjeta Nativa",        dot:"d-green"  },
+  { id:"visa",      titulo:"Tarjeta Visa Nación",   dot:"d-blue"   },
+  { id:"otros",     titulo:"Otros / Extra",         dot:"d-amber"  },
+].map(s => ({ ...s, items: [] }));
+
+// ── Estado ────────────────────────────────────────────
+const S = {
+  year:  new Date().getFullYear(),
+  month: new Date().getMonth(),
+  data:  null,
+};
+
+let saveTimer = null;
+
+// ── Auth ──────────────────────────────────────────────
+onAuthStateChanged(auth, u => {
+  if (u) {
+    q("auth-screen").style.display = "none";
+    q("app").style.cssText = "display:flex;flex-direction:column;";
+    cargarMes();
+  } else {
+    q("auth-screen").style.display = "flex";
+    q("app").style.display = "none";
+  }
+});
+
+window.doLogin = async () => {
+  const email = q("l-email").value.trim();
+  const pass  = q("l-pass").value;
+  const err   = q("auth-err");
+  err.style.display = "none";
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    err.style.display = "block";
+    err.textContent = "Email o contraseña incorrectos.";
+  }
+};
+
+window.doLogout = () => signOut(auth);
+
+// ── Firestore ─────────────────────────────────────────
+function mesKey() {
+  return `${S.year}-${String(S.month+1).padStart(2,"0")}`;
+}
+
+async function cargarMes() {
+  loading(true);
+  try {
+    const snap = await getDoc(doc(db, "gastos", mesKey()));
+    S.data = snap.exists() ? snap.data() : {
+      secciones: SECCIONES_BASE(),
+      cobrado:   [],
+    };
+    // compatibilidad: asegurar arrays
+    if (!S.data.secciones) S.data.secciones = SECCIONES_BASE();
+    if (!S.data.cobrado)   S.data.cobrado   = [];
+    S.data.secciones.forEach(s => { if (!s.items) s.items = []; });
+  } catch(e) {
+    toast("Error al cargar datos");
+    S.data = { secciones: SECCIONES_BASE(), cobrado: [] };
+  }
+  loading(false);
+  render();
+}
+
+function guardar() {
+  if (!auth.currentUser) return;
+  setDoc(doc(db, "gastos", mesKey()), S.data)
+    .then(() => toast("✓ Guardado"))
+    .catch(() => toast("Error al guardar"));
+}
+
+function guardarDebounced() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(guardar, 1000);
+}
+
+// Copiar mes anterior
+window.abrirCopiarMes = () => {
+  abrirModal("Copiar mes anterior",
+    `<p style="color:var(--text-soft);font-size:14px;">
+      Se copiará la <strong>estructura y montos</strong> del mes anterior.<br>
+      Los estados de pago se resetearán a pendiente.
+    </p>`,
+    async () => {
+      const pm = S.month === 0 ? 11 : S.month - 1;
+      const py = S.month === 0 ? S.year - 1 : S.year;
+      const key = `${py}-${String(pm+1).padStart(2,"0")}`;
+      cerrarModal();
+      loading(true);
+      try {
+        const snap = await getDoc(doc(db, "gastos", key));
+        if (snap.exists()) {
+          const prev = snap.data();
+          S.data.secciones = deep(prev.secciones).map(s => ({
+            ...s, items: (s.items||[]).map(it => ({ ...it, pagado: false }))
+          }));
+          S.data.cobrado = deep(prev.cobrado||[]).map(c => ({ ...c, monto: 0 }));
+          guardar();
+          render();
+          toast("Estructura copiada — ajustá los montos");
+        } else {
+          toast("No hay datos del mes anterior");
+        }
+      } catch(e) { toast("Error al copiar"); }
+      loading(false);
+    },
+    "Copiar", "btn-primary"
+  );
+};
+
+// ── Navegación ────────────────────────────────────────
+window.cambiarMes = (d) => {
+  S.month += d;
+  if (S.month > 11) { S.month = 0; S.year++; }
+  if (S.month <  0) { S.month = 11; S.year--; }
+  cargarMes();
+};
+
+// ── Render ────────────────────────────────────────────
+function render() {
+  // Header mes
+  const nom = MESES[S.month];
+  q("mes-pill").textContent = nom.slice(0,3).toUpperCase() + " " + S.year;
+  q("mes-full").textContent = nom + " " + S.year;
+
+  // Totales
+  let tot = 0, pag = 0, pend = 0;
+  S.data.secciones.forEach(s => s.items.forEach(it => {
+    const m = num(it.monto);
+    tot += m;
+    if (it.pagado) pag += m; else pend += m;
+  }));
+  const cob    = S.data.cobrado.reduce((a,c) => a + num(c.monto), 0);
+  const quedan = cob - tot;
+
+  q("rb-total").textContent    = ars(tot);
+  q("rb-cobrado").textContent  = ars(cob);
+  q("rb-quedan").textContent   = ars(quedan);
+  q("rb-pagado").textContent   = ars(pag);
+  q("rb-pendiente").textContent= ars(pend);
+  q("rb-quedan").style.color   = quedan >= 0 ? "var(--green)" : "var(--red)";
+
+  // Secciones
+  const main = q("main");
+  main.innerHTML = "";
+
+  S.data.secciones.forEach((sec, si) => {
+    main.appendChild(buildSeccion(sec, si));
+  });
+
+  // Botón nueva sección
+  const b = ce("button");
+  b.className = "btn btn-ghost btn-sm";
+  b.style.cssText = "margin-bottom:14px;";
+  b.textContent = "+ Nueva sección";
+  b.onclick = nuevaSeccion;
+  main.appendChild(b);
+
+  // Cobrado
+  main.appendChild(buildCobrado());
+
+  // Resumen
+  main.appendChild(buildResumen(tot, cob, quedan));
+}
+
+function buildSeccion(sec, si) {
+  const totSec = (sec.items||[]).reduce((a,it) => a + num(it.monto), 0);
+  const wrap = ce("div");
+  wrap.className = "seccion";
+  wrap.dataset.si = si;
+
+  // header
+  const hdr = ce("div");
+  hdr.className = "sec-header";
+  hdr.innerHTML = `
+    <div class="sec-header-left">
+      <span class="dot ${sec.dot||'d-blue'}"></span>
+      <span class="sec-titulo">${esc(sec.titulo)}</span>
+    </div>
+    <div class="sec-header-right">
+      <span class="sec-total">${ars(totSec)}</span>
+      <button class="btn btn-ghost btn-icon btn-sm" title="Editar sección">✏️</button>
+      <button class="btn btn-danger btn-icon btn-sm" title="Eliminar sección">🗑</button>
+      <span class="sec-chevron">▼</span>
+    </div>
+  `;
+
+  hdr.addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    wrap.classList.toggle("collapsed");
+  });
+
+  hdr.querySelectorAll("button")[0].addEventListener("click", e => {
+    e.stopPropagation();
+    editarSeccion(si);
+  });
+
+  hdr.querySelectorAll("button")[1].addEventListener("click", e => {
+    e.stopPropagation();
+    eliminarSeccion(si);
+  });
+
+  wrap.appendChild(hdr);
+
+  // body
+  const body = ce("div");
+  body.className = "sec-body";
+
+  if (!sec.items || !sec.items.length) {
+    const em = ce("div");
+    em.className = "empty-msg";
+    em.textContent = "Sin items. Agregá uno abajo ↓";
+    body.appendChild(em);
+  } else {
+    sec.items.forEach((it, ii) => body.appendChild(buildItem(it, si, ii)));
+  }
+
+  body.appendChild(buildAddRow(si));
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function buildItem(it, si, ii) {
+  const row = ce("div");
+  row.className = "item-row";
+  row.innerHTML = `
+    <div class="ic ic-nombre">${esc(it.nombre)}</div>
+    <div class="ic ic-cuotas">${it.cuotas ? esc(it.cuotas) : ""}</div>
+    <div class="ic ic-monto">${ars(num(it.monto))}</div>
+    <div class="ic ic-estado">
+      <span class="badge ${it.pagado ? 'badge-ok' : 'badge-no'}">
+        ${it.pagado ? "✓ Pagado" : "✗ Pendiente"}
+      </span>
+    </div>
+    <div class="ic-acciones">
+      <button class="btn btn-ghost btn-icon btn-sm" title="Editar">✏️</button>
+      <button class="btn btn-danger btn-icon btn-sm" title="Eliminar">✕</button>
+    </div>
+  `;
+
+  row.querySelector(".badge").addEventListener("click", () => {
+    S.data.secciones[si].items[ii].pagado = !S.data.secciones[si].items[ii].pagado;
+    guardarDebounced();
+    render();
+  });
+
+  row.querySelectorAll("button")[0].addEventListener("click", () => editarItem(si, ii));
+  row.querySelectorAll("button")[1].addEventListener("click", () => {
+    S.data.secciones[si].items.splice(ii, 1);
+    guardarDebounced();
+    render();
+  });
+
+  return row;
+}
+
+function buildAddRow(si) {
+  const row = ce("div");
+  row.className = "add-row";
+  row.innerHTML = `
+    <input type="text"   class="inp-nombre" placeholder="Nombre del gasto" />
+    <input type="text"   class="inp-cuotas" placeholder="Cuotas (2/6)" />
+    <input type="number" class="inp-monto"  placeholder="Monto $" min="0" />
+    <button class="btn btn-primary btn-sm">+ Agregar</button>
+  `;
+
+  const inN = row.querySelector(".inp-nombre");
+  const inC = row.querySelector(".inp-cuotas");
+  const inM = row.querySelector(".inp-monto");
+  const btn = row.querySelector("button");
+
+  const agregar = () => {
+    const nombre = inN.value.trim();
+    if (!nombre) { toast("Ingresá un nombre"); return; }
+    S.data.secciones[si].items.push({
+      nombre,
+      cuotas: inC.value.trim(),
+      monto:  parseFloat(inM.value) || 0,
+      pagado: false,
+    });
+    guardarDebounced();
+    render();
+    setTimeout(() => {
+      const rows = document.querySelectorAll(".add-row");
+      // buscar la del si correcto
+      const secEl = document.querySelector(`.seccion[data-si="${si}"]`);
+      if (secEl) secEl.querySelector(".inp-nombre")?.focus();
+    }, 40);
+  };
+
+  btn.addEventListener("click", agregar);
+  [inN, inM].forEach(el => el.addEventListener("keydown", e => { if(e.key==="Enter") agregar(); }));
+
+  return row;
+}
+
+function buildCobrado() {
+  const totCob = S.data.cobrado.reduce((a,c) => a + num(c.monto), 0);
+  const wrap = ce("div");
+  wrap.className = "seccion";
+
+  const hdr = ce("div");
+  hdr.className = "sec-header";
+  hdr.innerHTML = `
+    <div class="sec-header-left">
+      <span class="dot d-green"></span>
+      <span class="sec-titulo">Cobrado / Ingresos</span>
+    </div>
+    <div class="sec-header-right">
+      <span class="sec-total" style="color:var(--green)">${ars(totCob)}</span>
+      <span class="sec-chevron">▼</span>
+    </div>
+  `;
+  hdr.addEventListener("click", () => wrap.classList.toggle("collapsed"));
+  wrap.appendChild(hdr);
+
+  const body = ce("div");
+  body.className = "sec-body";
+
+  if (!S.data.cobrado.length) {
+    const em = ce("div");
+    em.className = "empty-msg";
+    em.textContent = "Agregá lo que cobrás este mes ↓";
+    body.appendChild(em);
+  } else {
+    S.data.cobrado.forEach((c, ci) => {
+      const row = ce("div");
+      row.className = "item-row";
+      row.innerHTML = `
+        <div class="ic ic-nombre">${esc(c.label)}</div>
+        <div class="ic ic-cuotas"></div>
+        <div class="ic ic-monto cobrado-val">${ars(num(c.monto))}</div>
+        <div class="ic ic-estado"></div>
+        <div class="ic-acciones">
+          <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
+          <button class="btn btn-danger btn-icon btn-sm">✕</button>
+        </div>
+      `;
+      row.querySelectorAll("button")[0].addEventListener("click", () => editarCobrado(ci));
+      row.querySelectorAll("button")[1].addEventListener("click", () => {
+        S.data.cobrado.splice(ci, 1);
+        guardarDebounced();
+        render();
+      });
+      body.appendChild(row);
+    });
+  }
+
+  // Add cobrado
+  const addRow = ce("div");
+  addRow.className = "add-row";
+  addRow.innerHTML = `
+    <input type="text"   class="inp-c-label"  placeholder="Descripción (ej: Sueldo, Anses)" />
+    <input type="number" class="inp-c-monto"  placeholder="Monto $" min="0" />
+    <button class="btn btn-success btn-sm">+ Agregar</button>
+  `;
+
+  const inL = addRow.querySelector(".inp-c-label");
+  const inM = addRow.querySelector(".inp-c-monto");
+  const btn = addRow.querySelector("button");
+
+  const agr = () => {
+    const label = inL.value.trim();
+    if (!label) { toast("Ingresá una descripción"); return; }
+    S.data.cobrado.push({ label, monto: parseFloat(inM.value)||0 });
+    guardarDebounced();
+    render();
+  };
+  btn.addEventListener("click", agr);
+  inM.addEventListener("keydown", e => { if(e.key==="Enter") agr(); });
+
+  body.appendChild(addRow);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function buildResumen(tot, cob, quedan) {
+  const wrap = ce("div");
+  wrap.className = "resumen-final";
+  wrap.innerHTML = `
+    <div class="rf-header">Resumen del mes</div>
+    <div class="rf-grid">
+      <div class="rf-celda">
+        <div class="rf-label">Total gastos</div>
+        <div class="rf-val" style="color:var(--red)">${ars(tot)}</div>
+      </div>
+      <div class="rf-celda">
+        <div class="rf-label">Total cobrado</div>
+        <div class="rf-val" style="color:var(--green)">${ars(cob)}</div>
+      </div>
+      <div class="rf-celda">
+        <div class="rf-label">Diferencia</div>
+        <div class="rf-val" style="color:${quedan>=0?'var(--green)':'var(--red)'}">${ars(quedan)}</div>
+      </div>
+    </div>
+  `;
+  return wrap;
+}
+
+// ── Modales de edición ────────────────────────────────
+function editarItem(si, ii) {
+  const it = S.data.secciones[si].items[ii];
+  abrirModal("Editar item", `
+    <div class="field"><label>Nombre</label>
+      <input type="text" id="m-n" value="${esc(it.nombre)}">
+    </div>
+    <div class="field"><label>Cuotas (ej: 2 de 6)</label>
+      <input type="text" id="m-c" value="${esc(it.cuotas||'')}">
+    </div>
+    <div class="field"><label>Monto ($)</label>
+      <input type="number" id="m-m" value="${it.monto||0}" min="0">
+    </div>
+    <div class="field"><label>Estado</label>
+      <select id="m-p">
+        <option value="0" ${!it.pagado?'selected':''}>✗ Pendiente</option>
+        <option value="1" ${it.pagado?'selected':''}>✓ Pagado</option>
+      </select>
+    </div>
+  `, () => {
+    const n = q("m-n").value.trim();
+    if (!n) { toast("Nombre requerido"); return; }
+    S.data.secciones[si].items[ii] = {
+      nombre: n,
+      cuotas: q("m-c").value.trim(),
+      monto:  parseFloat(q("m-m").value)||0,
+      pagado: q("m-p").value === "1",
+    };
+    guardarDebounced();
+    cerrarModal();
+    render();
+  });
+}
+
+function editarCobrado(ci) {
+  const c = S.data.cobrado[ci];
+  abrirModal("Editar ingreso", `
+    <div class="field"><label>Descripción</label>
+      <input type="text" id="m-cl" value="${esc(c.label)}">
+    </div>
+    <div class="field"><label>Monto ($)</label>
+      <input type="number" id="m-cm" value="${c.monto||0}" min="0">
+    </div>
+  `, () => {
+    S.data.cobrado[ci].label = q("m-cl").value.trim();
+    S.data.cobrado[ci].monto = parseFloat(q("m-cm").value)||0;
+    guardarDebounced();
+    cerrarModal();
+    render();
+  });
+}
+
+function editarSeccion(si) {
+  const sec = S.data.secciones[si];
+  const cols = ["d-blue","d-red","d-green","d-amber","d-purple"];
+  const names = { "d-blue":"Azul","d-red":"Rojo","d-green":"Verde","d-amber":"Ámbar","d-purple":"Violeta" };
+  abrirModal("Editar sección", `
+    <div class="field"><label>Título</label>
+      <input type="text" id="m-st" value="${esc(sec.titulo)}">
+    </div>
+    <div class="field"><label>Color</label>
+      <select id="m-sc">
+        ${cols.map(c=>`<option value="${c}" ${sec.dot===c?'selected':''}>${names[c]}</option>`).join('')}
+      </select>
+    </div>
+  `, () => {
+    const t = q("m-st").value.trim();
+    if (!t) { toast("Título requerido"); return; }
+    S.data.secciones[si].titulo = t;
+    S.data.secciones[si].dot    = q("m-sc").value;
+    guardarDebounced();
+    cerrarModal();
+    render();
+  });
+}
+
+function eliminarSeccion(si) {
+  abrirModal("Eliminar sección",
+    `<p style="color:var(--text-soft)">¿Eliminar "<strong>${esc(S.data.secciones[si].titulo)}</strong>" y todos sus ${S.data.secciones[si].items.length} items?</p>`,
+    () => {
+      S.data.secciones.splice(si, 1);
+      guardarDebounced();
+      cerrarModal();
+      render();
+    }, "Eliminar", "btn-danger"
+  );
+}
+
+function nuevaSeccion() {
+  abrirModal("Nueva sección", `
+    <div class="field"><label>Título</label>
+      <input type="text" id="m-nt" placeholder="Ej: Gastos médicos">
+    </div>
+  `, () => {
+    const t = q("m-nt").value.trim();
+    if (!t) { toast("Título requerido"); return; }
+    S.data.secciones.push({ id:"s"+Date.now(), titulo:t, dot:"d-blue", items:[] });
+    guardarDebounced();
+    cerrarModal();
+    render();
+  });
+}
+
+// ── Modal genérico ────────────────────────────────────
+let _modalCb = null;
+
+function abrirModal(titulo, body, onOk, btnTxt="Guardar", btnCls="btn-primary") {
+  _modalCb = onOk;
+  q("m-titulo").textContent = titulo;
+  q("m-body").innerHTML = body;
+  q("m-footer").innerHTML = `
+    <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+    <button class="btn ${btnCls}" id="m-ok">${btnTxt}</button>
+  `;
+  q("m-ok").addEventListener("click", () => _modalCb && _modalCb());
+  q("overlay").classList.add("open");
+  setTimeout(() => {
+    const el = q("m-body").querySelector("input,select");
+    if (el) { el.focus(); el.select && el.select(); }
+  }, 60);
+}
+
+window.cerrarModal = () => {
+  q("overlay").classList.remove("open");
+  _modalCb = null;
+};
+
+window.overlayClick = e => {
+  if (e.target === q("overlay")) cerrarModal();
+};
+
+// ── Helpers ───────────────────────────────────────────
+function q(id)     { return document.getElementById(id); }
+function ce(tag)   { return document.createElement(tag); }
+function num(v)    { return parseFloat(v)||0; }
+function deep(o)   { return JSON.parse(JSON.stringify(o)); }
+function esc(s)    {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function ars(n) {
+  return "$" + (isNaN(n)?0:n).toLocaleString("es-AR",
+    { minimumFractionDigits:0, maximumFractionDigits:2 });
+}
+function toast(msg) {
+  const t = q("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+function loading(show) {
+  q("loading").classList.toggle("show", show);
+}
+
+</script>
+</body>
+</html>
