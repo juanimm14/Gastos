@@ -952,7 +952,7 @@ function buildExtras() {
       <span class="sec-titulo">💰 Ingresos Extra</span>
     </div>
     <div class="sec-header-right">
-      <span class="sec-total" style="color:var(--green)">\${ars(totExtra)}</span>
+      <span class="sec-total" style="color:var(--green)">${ars(totExtra)}</span>
       <span class="sec-chevron">▼</span>
     </div>
   `;
@@ -972,9 +972,9 @@ function buildExtras() {
       const row = ce("div");
       row.className = "item-row";
       row.innerHTML = `
-        <div class="ic ic-nombre">\${esc(e.label)}</div>
+        <div class="ic ic-nombre">${esc(e.label)}</div>
         <div class="ic ic-cuotas"></div>
-        <div class="ic ic-monto cobrado-val">\${ars(num(e.monto))}</div>
+        <div class="ic ic-monto cobrado-val">${ars(num(e.monto))}</div>
         <div class="ic ic-estado"></div>
         <div class="ic-acciones">
           <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
@@ -1024,10 +1024,10 @@ function editarExtra(ei) {
   const e = S.data.extras[ei];
   abrirModal("Editar ingreso extra", `
     <div class="field"><label>Descripción</label>
-      <input type="text" id="m-el" value="\${esc(e.label)}">
+      <input type="text" id="m-el" value="${esc(e.label)}">
     </div>
     <div class="field"><label>Monto ($)</label>
-      <input type="number" id="m-em" value="\${e.monto||0}" min="0">
+      <input type="number" id="m-em" value="${e.monto||0}" min="0">
     </div>
   `, () => {
     S.data.extras[ei].label = q("m-el").value.trim();
