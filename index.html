@@ -687,10 +687,12 @@ async function cargarMes() {
     S.data = snap.exists() ? snap.data() : {
       secciones: SECCIONES_BASE(),
       cobrado:   [],
+      extras:    [],
     };
     // compatibilidad: asegurar arrays
     if (!S.data.secciones) S.data.secciones = SECCIONES_BASE();
     if (!S.data.cobrado)   S.data.cobrado   = [];
+    if (!S.data.extras)    S.data.extras    = [];
     S.data.secciones.forEach(s => { if (!s.items) s.items = []; });
   } catch(e) {
     toast("Error al cargar datos");
@@ -769,10 +771,12 @@ function render() {
     if (it.pagado) pag += m; else pend += m;
   }));
   const cob    = S.data.cobrado.reduce((a,c) => a + num(c.monto), 0);
-  const quedan = cob - tot;
+  const extraTot = (S.data.extras||[]).reduce((a,e) => a + num(e.monto), 0);
+  const totalIngresos = cob + extraTot;
+  const quedan = totalIngresos - tot;
 
   q("rb-total").textContent    = ars(tot);
-  q("rb-cobrado").textContent  = ars(cob);
+  q("rb-cobrado").textContent  = ars(totalIngresos);
   q("rb-quedan").textContent   = ars(quedan);
   q("rb-pagado").textContent   = ars(pag);
   q("rb-pendiente").textContent= ars(pend);
@@ -794,11 +798,14 @@ function render() {
   b.onclick = nuevaSeccion;
   main.appendChild(b);
 
+  // Ingresos Extra
+  main.appendChild(buildExtras());
+
   // Cobrado
   main.appendChild(buildCobrado());
 
   // Resumen
-  main.appendChild(buildResumen(tot, cob, quedan));
+  main.appendChild(buildResumen(tot, totalIngresos, quedan));
 }
 
 function buildSeccion(sec, si) {
@@ -930,6 +937,105 @@ function buildAddRow(si) {
   [inN, inM].forEach(el => el.addEventListener("keydown", e => { if(e.key==="Enter") agregar(); }));
 
   return row;
+}
+
+function buildExtras() {
+  const totExtra = (S.data.extras||[]).reduce((a,e) => a + num(e.monto), 0);
+  const wrap = ce("div");
+  wrap.className = "seccion";
+
+  const hdr = ce("div");
+  hdr.className = "sec-header";
+  hdr.innerHTML = `
+    <div class="sec-header-left">
+      <span class="dot d-amber"></span>
+      <span class="sec-titulo">💰 Ingresos Extra</span>
+    </div>
+    <div class="sec-header-right">
+      <span class="sec-total" style="color:var(--green)">\${ars(totExtra)}</span>
+      <span class="sec-chevron">▼</span>
+    </div>
+  `;
+  hdr.addEventListener("click", () => wrap.classList.toggle("collapsed"));
+  wrap.appendChild(hdr);
+
+  const body = ce("div");
+  body.className = "sec-body";
+
+  if (!S.data.extras || !S.data.extras.length) {
+    const em = ce("div");
+    em.className = "empty-msg";
+    em.textContent = "Agregá ingresos extra del mes ↓";
+    body.appendChild(em);
+  } else {
+    S.data.extras.forEach((e, ei) => {
+      const row = ce("div");
+      row.className = "item-row";
+      row.innerHTML = `
+        <div class="ic ic-nombre">\${esc(e.label)}</div>
+        <div class="ic ic-cuotas"></div>
+        <div class="ic ic-monto cobrado-val">\${ars(num(e.monto))}</div>
+        <div class="ic ic-estado"></div>
+        <div class="ic-acciones">
+          <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
+          <button class="btn btn-danger btn-icon btn-sm">✕</button>
+        </div>
+      `;
+      row.querySelectorAll("button")[0].addEventListener("click", () => editarExtra(ei));
+      row.querySelectorAll("button")[1].addEventListener("click", () => {
+        S.data.extras.splice(ei, 1);
+        guardarDebounced();
+        render();
+      });
+      body.appendChild(row);
+    });
+  }
+
+  // Add row
+  const addRow = ce("div");
+  addRow.className = "add-row";
+  addRow.innerHTML = `
+    <input type="text"   class="inp-e-label" placeholder="Descripción (ej: Arreglos, Aye)" />
+    <input type="number" class="inp-e-monto" placeholder="Monto $" min="0" />
+    <button class="btn btn-success btn-sm">+ Agregar</button>
+  `;
+
+  const inL = addRow.querySelector(".inp-e-label");
+  const inM = addRow.querySelector(".inp-e-monto");
+  const btn = addRow.querySelector("button");
+
+  const agr = () => {
+    const label = inL.value.trim();
+    if (!label) { toast("Ingresá una descripción"); return; }
+    if (!S.data.extras) S.data.extras = [];
+    S.data.extras.push({ label, monto: parseFloat(inM.value)||0 });
+    guardarDebounced();
+    render();
+  };
+  btn.addEventListener("click", agr);
+  inM.addEventListener("keydown", e => { if(e.key==="Enter") agr(); });
+
+  body.appendChild(addRow);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function editarExtra(ei) {
+  const e = S.data.extras[ei];
+  abrirModal("Editar ingreso extra", `
+    <div class="field"><label>Descripción</label>
+      <input type="text" id="m-el" value="\${esc(e.label)}">
+    </div>
+    <div class="field"><label>Monto ($)</label>
+      <input type="number" id="m-em" value="\${e.monto||0}" min="0">
+    </div>
+  `, () => {
+    S.data.extras[ei].label = q("m-el").value.trim();
+    S.data.extras[ei].monto = parseFloat(q("m-em").value)||0;
+    guardarDebounced();
+    cerrarModal();
+    render();
+  });
 }
 
 function buildCobrado() {
