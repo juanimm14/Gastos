@@ -533,10 +533,6 @@
     <p class="auth-sub">Ingresá para continuar</p>
     <div id="auth-err" class="auth-error"></div>
     <div class="field">
-      <label>Email</label>
-      <input type="email" id="l-email" placeholder="tu@email.com" autocomplete="email">
-    </div>
-    <div class="field">
       <label>Contraseña</label>
       <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password"
         onkeydown="if(event.key==='Enter') doLogin()">
@@ -676,7 +672,7 @@ onAuthStateChanged(auth, u => {
 });
 
 window.doLogin = async () => {
-  const email = q("l-email").value.trim();
+  const email = "juanimm91@gmail.com";
   const pass  = q("l-pass").value;
   const err   = q("auth-err");
   err.style.display = "none";
@@ -684,7 +680,7 @@ window.doLogin = async () => {
     await signInWithEmailAndPassword(auth, email, pass);
   } catch(e) {
     err.style.display = "block";
-    err.textContent = "Email o contraseña incorrectos.";
+    err.textContent = "Contraseña incorrecta.";
   }
 };
 
