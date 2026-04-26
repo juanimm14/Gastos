@@ -1053,11 +1053,9 @@ function buildItem(it, si, ii) {
   row.className = "item-row";
   const fin = calcFinCuota(it.cuotas);
   const esTar = esTarjeta(si);
+  const finHtml = fin ? '<span style="font-size:10px;color:var(--text-soft);">fin: ' + fin + '</span>' : '';
   const cuotasHtml = it.cuotas
-    ? `<div class="ic ic-cuotas" style="flex-direction:column;align-items:flex-start;gap:1px;">
-        <span>${esc(it.cuotas)}</span>
-        ${fin ? `<span style="font-size:10px;color:var(--text-soft);">fin: ${fin}</span>` : ""}
-       </div>`
+    ? `<div class="ic ic-cuotas" style="flex-direction:column;align-items:flex-start;gap:1px;"><span>${esc(it.cuotas)}</span>${finHtml}</div>`
     : `<div class="ic ic-cuotas"></div>`;
 
   const badgeHtml = esTar ? "" : `
