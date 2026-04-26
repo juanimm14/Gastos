@@ -808,6 +808,11 @@ function render() {
   main.appendChild(buildResumen(tot, totalIngresos, quedan));
 }
 
+function esSeccionDesplegable(sec) {
+  const t = (sec.titulo||"").toLowerCase();
+  return t.includes("extra") || t.includes("variable");
+}
+
 function buildSeccion(sec, si) {
   const totSec = (sec.items||[]).reduce((a,it) => a + num(it.monto), 0);
   const wrap = ce("div");
@@ -851,13 +856,95 @@ function buildSeccion(sec, si) {
   const body = ce("div");
   body.className = "sec-body";
 
-  if (!sec.items || !sec.items.length) {
-    const em = ce("div");
-    em.className = "empty-msg";
-    em.textContent = "Sin items. Agregá uno abajo ↓";
-    body.appendChild(em);
+  if (esSeccionDesplegable(sec)) {
+    // Modo agrupado: items se agrupan por nombre base y son desplegables
+    if (!sec.items || !sec.items.length) {
+      const em = ce("div"); em.className = "empty-msg";
+      em.textContent = "Sin items. Agregá uno abajo ↓";
+      body.appendChild(em);
+    } else {
+      // Agrupar por "grupo" o por nombre si no tienen grupo
+      const grupos = {};
+      sec.items.forEach((it, ii) => {
+        const g = it.grupo || it.nombre;
+        if (!grupos[g]) grupos[g] = [];
+        grupos[g].push({it, ii});
+      });
+
+      Object.entries(grupos).forEach(([gNombre, gItems]) => {
+        const gTotal = gItems.reduce((a,{it}) => a + num(it.monto), 0);
+        const gWrap = ce("div");
+        gWrap.style.cssText = "border-bottom:1px solid var(--border);";
+
+        const gHdr = ce("div");
+        gHdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#fafaf8;cursor:pointer;user-select:none;";
+        gHdr.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;">
+            <span class="g-arrow" style="font-size:11px;color:var(--text-soft);">▶</span>
+            ${esc(gNombre)}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:13px;font-weight:600;">${ars(gTotal)}</span>
+            <span class="badge ${gItems.some(({it})=>!it.pagado) ? 'badge-no' : 'badge-ok'}" style="font-size:11px;">
+              ${gItems.some(({it})=>!it.pagado) ? "✗ Pendiente" : "✓ Pagado"}
+            </span>
+          </div>
+        `;
+
+        const gBody = ce("div");
+        gBody.style.display = "none";
+
+        gHdr.addEventListener("click", () => {
+          const open = gBody.style.display !== "none";
+          gBody.style.display = open ? "none" : "block";
+          gHdr.querySelector(".g-arrow").textContent = open ? "▶" : "▼";
+        });
+
+        // marcar todo el grupo como pagado tocando el badge
+        gHdr.querySelector(".badge").addEventListener("click", e => {
+          e.stopPropagation();
+          const allPaid = !gItems.some(({it})=>!it.pagado);
+          gItems.forEach(({ii}) => { S.data.secciones[si].items[ii].pagado = !allPaid; });
+          guardarDebounced(); render();
+        });
+
+        gWrap.appendChild(gHdr);
+
+        gItems.forEach(({it, ii}) => {
+          const iRow = ce("div");
+          iRow.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 12px 7px 32px;border-top:1px solid var(--border);font-size:13px;";
+          const fin = calcFinCuota(it.cuotas);
+          iRow.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="color:var(--text-soft);">${esc(it.nombre !== gNombre ? it.nombre : (it.nota||"Cobro"))}</span>
+              ${it.cuotas ? `<span style="font-size:10px;color:var(--text-soft);">${esc(it.cuotas)}${fin?' · fin: '+fin:''}</span>` : ""}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-weight:500;">${ars(num(it.monto))}</span>
+              <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
+              <button class="btn btn-danger btn-icon btn-sm">✕</button>
+            </div>
+          `;
+          iRow.querySelectorAll("button")[0].addEventListener("click", () => editarItem(si, ii));
+          iRow.querySelectorAll("button")[1].addEventListener("click", () => {
+            S.data.secciones[si].items.splice(ii, 1);
+            guardarDebounced(); render();
+          });
+          gBody.appendChild(iRow);
+        });
+
+        gWrap.appendChild(gBody);
+        body.appendChild(gWrap);
+      });
+    }
   } else {
-    sec.items.forEach((it, ii) => body.appendChild(buildItem(it, si, ii)));
+    if (!sec.items || !sec.items.length) {
+      const em = ce("div"); em.className = "empty-msg";
+      em.textContent = "Sin items. Agregá uno abajo ↓";
+      body.appendChild(em);
+    } else {
+      sec.items.forEach((it, ii) => body.appendChild(buildItem(it, si, ii)));
+    }
   }
 
   body.appendChild(buildAddRow(si));
@@ -865,29 +952,63 @@ function buildSeccion(sec, si) {
   return wrap;
 }
 
+const MESES_NOMBRES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+function calcFinCuota(cuotaStr) {
+  // Acepta "2/6", "2 de 6", "2-6"
+  if (!cuotaStr) return "";
+  const m = cuotaStr.replace(/\s+de\s+/i,"/").replace("-","/").match(/(\d+)\/(\d+)/);
+  if (!m) return "";
+  const actual = parseInt(m[1]), total = parseInt(m[2]);
+  if (!actual || !total || actual > total) return "";
+  const restantes = total - actual;
+  const hoy = new Date(S.mes + "-01");
+  hoy.setMonth(hoy.getMonth() + restantes);
+  return MESES_NOMBRES[hoy.getMonth()] + " " + hoy.getFullYear();
+}
+
+function esTarjeta(si) {
+  const titulo = (S.data.secciones[si]?.titulo||"").toLowerCase();
+  return titulo.includes("tarjeta") || titulo.includes("naranja") || titulo.includes("visa") || titulo.includes("nativa") || titulo.includes("master") || titulo.includes("amex");
+}
+
 function buildItem(it, si, ii) {
   const row = ce("div");
   row.className = "item-row";
-  row.innerHTML = `
-    <div class="ic ic-nombre">${esc(it.nombre)}</div>
-    <div class="ic ic-cuotas">${it.cuotas ? esc(it.cuotas) : ""}</div>
-    <div class="ic ic-monto">${ars(num(it.monto))}</div>
+  const fin = calcFinCuota(it.cuotas);
+  const esTar = esTarjeta(si);
+  const cuotasHtml = it.cuotas
+    ? `<div class="ic ic-cuotas" style="flex-direction:column;align-items:flex-start;gap:1px;">
+        <span>${esc(it.cuotas)}</span>
+        ${fin ? `<span style="font-size:10px;color:var(--text-soft);">fin: ${fin}</span>` : ""}
+       </div>`
+    : `<div class="ic ic-cuotas"></div>`;
+
+  const badgeHtml = esTar ? "" : `
     <div class="ic ic-estado">
       <span class="badge ${it.pagado ? 'badge-ok' : 'badge-no'}">
         ${it.pagado ? "✓ Pagado" : "✗ Pendiente"}
       </span>
-    </div>
+    </div>`;
+
+  row.innerHTML = `
+    <div class="ic ic-nombre">${esc(it.nombre)}</div>
+    ${cuotasHtml}
+    <div class="ic ic-monto">${ars(num(it.monto))}</div>
+    ${badgeHtml}
     <div class="ic-acciones">
       <button class="btn btn-ghost btn-icon btn-sm" title="Editar">✏️</button>
       <button class="btn btn-danger btn-icon btn-sm" title="Eliminar">✕</button>
     </div>
   `;
 
-  row.querySelector(".badge").addEventListener("click", () => {
-    S.data.secciones[si].items[ii].pagado = !S.data.secciones[si].items[ii].pagado;
-    guardarDebounced();
-    render();
-  });
+  if (!esTar) {
+    row.querySelector(".badge").addEventListener("click", () => {
+      S.data.secciones[si].items[ii].pagado = !S.data.secciones[si].items[ii].pagado;
+      guardarDebounced();
+      render();
+    });
+  }
 
   row.querySelectorAll("button")[0].addEventListener("click", () => editarItem(si, ii));
   row.querySelectorAll("button")[1].addEventListener("click", () => {
@@ -904,7 +1025,7 @@ function buildAddRow(si) {
   row.className = "add-row";
   row.innerHTML = `
     <input type="text"   class="inp-nombre" placeholder="Nombre del gasto" />
-    <input type="text"   class="inp-cuotas" placeholder="Cuotas (2/6)" />
+    <input type="text"   class="inp-cuotas" placeholder="Cuota (ej: 2/6)" />
     <input type="number" class="inp-monto"  placeholder="Monto $" min="0" />
     <button class="btn btn-primary btn-sm">+ Agregar</button>
   `;
@@ -1221,7 +1342,7 @@ function editarItem(si, ii) {
     <div class="field"><label>Nombre</label>
       <input type="text" id="m-n" value="${esc(it.nombre)}">
     </div>
-    <div class="field"><label>Cuotas (ej: 2 de 6)</label>
+    <div class="field"><label>Cuota actual/total (ej: 2/6)</label>
       <input type="text" id="m-c" value="${esc(it.cuotas||'')}">
     </div>
     <div class="field"><label>Monto ($)</label>
