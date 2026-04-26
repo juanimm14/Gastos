@@ -324,7 +324,7 @@
   /* ─── ITEMS ─────────────────────────────────────── */
   .item-row {
     display: grid;
-    grid-template-columns: 1fr minmax(70px,auto) auto auto auto;
+    grid-template-columns: 1fr auto auto auto auto;
     align-items: center;
     border-bottom: 1px solid var(--border);
     transition: background 0.1s;
@@ -1012,6 +1012,7 @@ function buildSeccion(sec, si) {
     cB.addEventListener("click", addCat2);
     cI.addEventListener("keydown", ev => { if(ev.key==="Enter") addCat2(); });
     body.appendChild(addCat);
+    // NO buildAddRow for desplegable sections - category add is enough
 
   } else {
     if (!sec.items || !sec.items.length) {
@@ -1023,7 +1024,9 @@ function buildSeccion(sec, si) {
     }
   }
 
-  body.appendChild(buildAddRow(si));
+  if (!esSeccionDesplegable(sec)) {
+    body.appendChild(buildAddRow(si));
+  }
   wrap.appendChild(body);
   return wrap;
 }
@@ -1044,8 +1047,23 @@ function calcFinCuota(cuotaStr) {
 }
 
 function esTarjeta(si) {
-  const titulo = (S.data.secciones[si]?.titulo||"").toLowerCase();
-  return titulo.includes("tarjeta") || titulo.includes("naranja") || titulo.includes("visa") || titulo.includes("nativa") || titulo.includes("master") || titulo.includes("amex");
+  return esTarjetaSec((S.data.secciones[si]?.titulo||"").toLowerCase());
+}
+
+function getTarjetaTotal(nombre) {
+  // Find a tarjeta section whose title matches this item nombre
+  if (!S.data.secciones) return null;
+  const n = nombre.toLowerCase();
+  const sec = S.data.secciones.find(s => {
+    const t = (s.titulo||"").toLowerCase();
+    return esTarjetaSec(t) && (t.includes(n) || n.includes(t.split(" ").find(w=>w.length>3)||""));
+  });
+  if (!sec) return null;
+  return (sec.items||[]).reduce((a,i) => a + num(i.monto), 0);
+}
+
+function esTarjetaSec(t) {
+  return t.includes("tarjeta") || t.includes("naranja") || t.includes("visa") || t.includes("nativa") || t.includes("master") || t.includes("amex");
 }
 
 function buildItem(it, si, ii) {
@@ -1053,14 +1071,24 @@ function buildItem(it, si, ii) {
   row.className = "item-row";
   const fin = calcFinCuota(it.cuotas);
   const esTar = esTarjeta(si);
+  // Auto-sum from tarjeta section if this item references one
+  const secTitulo = (S.data.secciones[si]?.titulo||"").toLowerCase();
+  const esDebitoSec = secTitulo.includes("débito") || secTitulo.includes("debito") || secTitulo.includes("red link");
+  if (esDebitoSec && it.nombre) {
+    const autoTotal = getTarjetaTotal(it.nombre);
+    if (autoTotal !== null && autoTotal !== num(it.monto)) {
+      // Auto-update the monto to match tarjeta total
+      S.data.secciones[si].items[ii].monto = autoTotal;
+      it = S.data.secciones[si].items[ii];
+    }
+  }
   const finHtml = fin ? '<span style="font-size:10px;color:var(--text-soft);">fin: ' + fin + '</span>' : '';
   const cuotasHtml = it.cuotas
     ? `<div class="ic ic-cuotas" style="flex-direction:column;align-items:flex-start;gap:1px;"><span>${esc(it.cuotas)}</span>${finHtml}</div>`
     : `<div class="ic ic-cuotas"></div>`;
 
-  const badgeHtml = esTar
-    ? `<div class="ic ic-estado"></div>`
-    : `<div class="ic ic-estado">
+  const badgeHtml = esTar ? "" : `
+    <div class="ic ic-estado">
       <span class="badge ${it.pagado ? 'badge-ok' : 'badge-no'}">
         ${it.pagado ? "✓ Pagado" : "✗ Pendiente"}
       </span>
