@@ -857,86 +857,162 @@ function buildSeccion(sec, si) {
   body.className = "sec-body";
 
   if (esSeccionDesplegable(sec)) {
-    // Modo agrupado: items se agrupan por nombre base y son desplegables
-    if (!sec.items || !sec.items.length) {
+    // Modo categorías desplegables igual que Ingresos Extra
+    // sec.cats = [{label, items:[{nota,monto}], pagado}]
+    if (!sec.cats) sec.cats = [];
+
+    // Migrar items viejos como categorías si existen
+    if (sec.items && sec.items.length && !sec.cats.length) {
+      sec.items.forEach(it => {
+        sec.cats.push({ label: it.nombre, items: it.monto ? [{nota:"", monto: num(it.monto)}] : [], pagado: it.pagado||false });
+      });
+      sec.items = [];
+      guardarDebounced();
+    }
+
+    if (!sec.cats.length) {
       const em = ce("div"); em.className = "empty-msg";
-      em.textContent = "Sin items. Agregá uno abajo ↓";
+      em.textContent = "Agregá categorías abajo ↓";
       body.appendChild(em);
     } else {
-      // Agrupar por "grupo" o por nombre si no tienen grupo
-      const grupos = {};
-      sec.items.forEach((it, ii) => {
-        const g = it.grupo || it.nombre;
-        if (!grupos[g]) grupos[g] = [];
-        grupos[g].push({it, ii});
-      });
+      sec.cats.forEach((cat, ci) => {
+        const catTotal = (cat.items||[]).reduce((a,i) => a + num(i.monto), 0);
+        const catWrap = ce("div");
+        catWrap.style.cssText = "border-bottom:1px solid var(--border);";
 
-      Object.entries(grupos).forEach(([gNombre, gItems]) => {
-        const gTotal = gItems.reduce((a,{it}) => a + num(it.monto), 0);
-        const gWrap = ce("div");
-        gWrap.style.cssText = "border-bottom:1px solid var(--border);";
-
-        const gHdr = ce("div");
-        gHdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#fafaf8;cursor:pointer;user-select:none;";
-        gHdr.innerHTML = `
+        const catHdr = ce("div");
+        catHdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#fafaf8;cursor:pointer;user-select:none;";
+        catHdr.innerHTML = `
           <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;">
             <span class="g-arrow" style="font-size:11px;color:var(--text-soft);">▶</span>
-            ${esc(gNombre)}
+            ${esc(cat.label)}
           </div>
           <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:13px;font-weight:600;">${ars(gTotal)}</span>
-            <span class="badge ${gItems.some(({it})=>!it.pagado) ? 'badge-no' : 'badge-ok'}" style="font-size:11px;">
-              ${gItems.some(({it})=>!it.pagado) ? "✗ Pendiente" : "✓ Pagado"}
+            <span style="font-size:13px;font-weight:600;">${ars(catTotal)}</span>
+            <span class="badge ${cat.pagado ? 'badge-ok' : 'badge-no'}" style="font-size:11px;">
+              ${cat.pagado ? "✓ Pagado" : "✗ Pendiente"}
             </span>
+            <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
+            <button class="btn btn-danger btn-icon btn-sm">✕</button>
           </div>
         `;
 
-        const gBody = ce("div");
-        gBody.style.display = "none";
+        const catBody = ce("div");
+        catBody.style.display = "none";
 
-        gHdr.addEventListener("click", () => {
-          const open = gBody.style.display !== "none";
-          gBody.style.display = open ? "none" : "block";
-          gHdr.querySelector(".g-arrow").textContent = open ? "▶" : "▼";
+        catHdr.addEventListener("click", e => {
+          if (e.target.closest("button")) return;
+          const open = catBody.style.display !== "none";
+          catBody.style.display = open ? "none" : "block";
+          catHdr.querySelector(".g-arrow").textContent = open ? "▶" : "▼";
         });
 
-        // marcar todo el grupo como pagado tocando el badge
-        gHdr.querySelector(".badge").addEventListener("click", e => {
+        catHdr.querySelector(".badge").addEventListener("click", e => {
           e.stopPropagation();
-          const allPaid = !gItems.some(({it})=>!it.pagado);
-          gItems.forEach(({ii}) => { S.data.secciones[si].items[ii].pagado = !allPaid; });
+          S.data.secciones[si].cats[ci].pagado = !cat.pagado;
           guardarDebounced(); render();
         });
 
-        gWrap.appendChild(gHdr);
+        catHdr.querySelectorAll("button")[0].addEventListener("click", e => {
+          e.stopPropagation();
+          abrirModal("Editar categoría", `
+            <div class="field"><label>Nombre</label>
+              <input type="text" id="m-cl" value="${esc(cat.label)}">
+            </div>
+          `, () => {
+            S.data.secciones[si].cats[ci].label = q("m-cl").value.trim() || cat.label;
+            guardarDebounced(); cerrarModal(); render();
+          });
+        });
 
-        gItems.forEach(({it, ii}) => {
+        catHdr.querySelectorAll("button")[1].addEventListener("click", e => {
+          e.stopPropagation();
+          S.data.secciones[si].cats.splice(ci, 1);
+          guardarDebounced(); render();
+        });
+
+        catWrap.appendChild(catHdr);
+
+        // Sub-items
+        (cat.items||[]).forEach((it, ii) => {
           const iRow = ce("div");
           iRow.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 12px 7px 32px;border-top:1px solid var(--border);font-size:13px;";
-          const fin = calcFinCuota(it.cuotas);
           iRow.innerHTML = `
-            <div style="display:flex;flex-direction:column;gap:2px;">
-              <span style="color:var(--text-soft);">${esc(it.nombre !== gNombre ? it.nombre : (it.nota||"Cobro"))}</span>
-              ${it.cuotas ? `<span style="font-size:10px;color:var(--text-soft);">${esc(it.cuotas)}${fin?' · fin: '+fin:''}</span>` : ""}
-            </div>
+            <span style="color:var(--text-soft);">${esc(it.nota || ("Cobro " + (ii+1)))}</span>
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-weight:500;">${ars(num(it.monto))}</span>
               <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
               <button class="btn btn-danger btn-icon btn-sm">✕</button>
             </div>
           `;
-          iRow.querySelectorAll("button")[0].addEventListener("click", () => editarItem(si, ii));
+          iRow.querySelectorAll("button")[0].addEventListener("click", () => {
+            abrirModal("Editar cobro", `
+              <div class="field"><label>Nota (opcional)</label>
+                <input type="text" id="m-in" value="${esc(it.nota||'')}">
+              </div>
+              <div class="field"><label>Monto ($)</label>
+                <input type="number" id="m-im" value="${it.monto||0}" min="0">
+              </div>
+            `, () => {
+              S.data.secciones[si].cats[ci].items[ii].nota  = q("m-in").value.trim();
+              S.data.secciones[si].cats[ci].items[ii].monto = parseFloat(q("m-im").value)||0;
+              guardarDebounced(); cerrarModal(); render();
+            });
+          });
           iRow.querySelectorAll("button")[1].addEventListener("click", () => {
-            S.data.secciones[si].items.splice(ii, 1);
+            S.data.secciones[si].cats[ci].items.splice(ii, 1);
             guardarDebounced(); render();
           });
-          gBody.appendChild(iRow);
+          catBody.appendChild(iRow);
         });
 
-        gWrap.appendChild(gBody);
-        body.appendChild(gWrap);
+        // Agregar monto dentro de categoría
+        const addI = ce("div");
+        addI.style.cssText = "display:flex;gap:6px;padding:7px 12px 7px 32px;border-top:1px dashed var(--border);background:#f9f9f7;";
+        addI.innerHTML = `
+          <input type="text"   class="inp-nota"   placeholder="Nota (opcional)" style="flex:1;padding:5px 8px;font-size:12px;">
+          <input type="number" class="inp-imonto"  placeholder="Monto $" min="0" style="width:110px;padding:5px 8px;font-size:12px;">
+          <button class="btn btn-success btn-sm" style="font-size:12px;">+ Agregar</button>
+        `;
+        const iN = addI.querySelector(".inp-nota");
+        const iM = addI.querySelector(".inp-imonto");
+        const iB = addI.querySelector("button");
+        const addMonto = () => {
+          const monto = parseFloat(iM.value)||0;
+          if (!monto) { toast("Ingresá un monto"); return; }
+          if (!S.data.secciones[si].cats[ci].items) S.data.secciones[si].cats[ci].items = [];
+          S.data.secciones[si].cats[ci].items.push({ nota: iN.value.trim(), monto });
+          guardarDebounced(); render();
+        };
+        iB.addEventListener("click", addMonto);
+        iM.addEventListener("keydown", ev => { if(ev.key==="Enter") addMonto(); });
+        catBody.appendChild(addI);
+
+        catWrap.appendChild(catBody);
+        body.appendChild(catWrap);
       });
     }
+
+    // Agregar nueva categoría
+    const addCat = ce("div");
+    addCat.className = "add-row";
+    addCat.innerHTML = `
+      <input type="text" class="inp-cat2" placeholder="Nueva categoría (ej: Nafta, Comida)" style="flex:1;">
+      <button class="btn btn-success btn-sm">+ Agregar categoría</button>
+    `;
+    const cI = addCat.querySelector(".inp-cat2");
+    const cB = addCat.querySelector("button");
+    const addCat2 = () => {
+      const label = cI.value.trim();
+      if (!label) { toast("Ingresá un nombre"); return; }
+      if (!S.data.secciones[si].cats) S.data.secciones[si].cats = [];
+      S.data.secciones[si].cats.push({ label, items:[], pagado: false });
+      guardarDebounced(); render();
+    };
+    cB.addEventListener("click", addCat2);
+    cI.addEventListener("keydown", ev => { if(ev.key==="Enter") addCat2(); });
+    body.appendChild(addCat);
+
   } else {
     if (!sec.items || !sec.items.length) {
       const em = ce("div"); em.className = "empty-msg";
