@@ -1055,8 +1055,7 @@ function calcFinCuota(cuotaStr) {
   const actual = parseInt(m[1]), total = parseInt(m[2]);
   if (!actual || !total || actual > total) return "";
   const restantes = total - actual;
-  const [anio, mesIdx] = S.mes.split("-").map(Number);
-  const hoy = new Date(anio, mesIdx - 1, 1); // local, sin problema UTC
+  const hoy = new Date(S.year, S.month, 1);
   hoy.setMonth(hoy.getMonth() + restantes);
   return MESES_NOMBRES[hoy.getMonth()] + " " + hoy.getFullYear();
 }
