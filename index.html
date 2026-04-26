@@ -769,11 +769,11 @@ function render() {
   S.data.secciones.forEach((s, si) => {
     const esTar = esTarjetaSec((s.titulo||"").toLowerCase());
     // items normales
+    // Las secciones de tarjeta NO se suman al total (ya están incluidas en Débito/Red Link)
     (s.items||[]).forEach(it => {
       const m = num(it.monto);
-      tot += m;
-      // tarjeta sections: no sumar a pag/pend (se pagan desde debito)
       if (!esTar) {
+        tot += m;
         if (it.pagado) pag += m; else pend += m;
       }
     });
