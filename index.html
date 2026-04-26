@@ -510,6 +510,30 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ─── GRÁFICOS ──────────────────────────────────── */
+  .grafico-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    padding: 16px 14px;
+  }
+  .grafico-titulo {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+  }
+  .grafico-canvas-wrap { display: flex; justify-content: center; }
+  .grafico-leyenda { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .ley-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-soft); }
+  .ley-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .ley-val { font-weight: 600; color: var(--text); margin-left: 2px; }
+
   /* ─── RESPONSIVE ────────────────────────────────── */
   @media (max-width: 580px) {
     header, .mes-strip { padding-left: 14px; padding-right: 14px; }
@@ -820,6 +844,9 @@ function render() {
 
   // Resumen
   main.appendChild(buildResumen(tot, totalIngresos, quedan));
+
+  // Gráficos
+  main.appendChild(buildGraficos(tot, totalIngresos, quedan, pag, pend));
 }
 
 function esSeccionDesplegable(sec) {
@@ -828,7 +855,8 @@ function esSeccionDesplegable(sec) {
 }
 
 function buildSeccion(sec, si) {
-  const totSec = (sec.items||[]).reduce((a,it) => a + num(it.monto), 0);
+  const totSec = (sec.items||[]).reduce((a,it) => a + num(it.monto), 0)
+               + (sec.cats||[]).reduce((a,cat) => a + (cat.items||[]).reduce((b,i) => b + num(i.monto), 0), 0);
   const wrap = ce("div");
   wrap.className = "seccion";
   wrap.dataset.si = si;
@@ -1426,6 +1454,134 @@ function buildCobrado() {
 
   body.appendChild(addRow);
   wrap.appendChild(body);
+  return wrap;
+}
+
+function buildGraficos(tot, totalIngresos, quedan, pag, pend) {
+  const wrap = ce("div");
+  const COLORES = ["#2563eb","#dc2626","#16a34a","#d97706","#7c3aed","#0891b2","#db2777","#65a30d","#ea580c","#6366f1"];
+  const dpr = window.devicePixelRatio || 1;
+  const SZ = 180;
+
+  function drawDona(canvas, slices) {
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width/dpr, H = canvas.height/dpr;
+    const cx = W/2, cy = H/2, r = Math.min(W,H)/2 - 6, ri = r * 0.52;
+    ctx.clearRect(0,0,W*dpr,H*dpr);
+    const total = slices.reduce((a,s) => a + s.val, 0);
+    if (!total) return;
+    let ang = -Math.PI/2;
+    slices.forEach(s => {
+      const sweep = (s.val/total)*2*Math.PI;
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,ang,ang+sweep); ctx.closePath();
+      ctx.fillStyle = s.color; ctx.fill();
+      ang += sweep;
+    });
+    ctx.beginPath(); ctx.arc(cx,cy,ri,0,2*Math.PI);
+    ctx.fillStyle = "white"; ctx.fill();
+  }
+
+  function drawBarras(canvas, items) {
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width/dpr;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const max = Math.max(...items.map(i => i.val), 1);
+    const barH = 28, gap = 14;
+    items.forEach((it, i) => {
+      const y = i*(barH+gap);
+      const w = (it.val/max)*W;
+      ctx.fillStyle = "#f1f5f9";
+      ctx.beginPath(); ctx.roundRect(0,y,W,barH,6); ctx.fill();
+      if (w > 0) {
+        ctx.fillStyle = it.color;
+        ctx.beginPath(); ctx.roundRect(0,y,w,barH,6); ctx.fill();
+      }
+    });
+  }
+
+  function makeCanvas(w, h) {
+    const c = ce("canvas");
+    c.width = w*dpr; c.height = h*dpr;
+    c.style.width = w+"px"; c.style.height = h+"px";
+    c.getContext("2d").scale(dpr,dpr);
+    return c;
+  }
+
+  // ── Gráfico 1: Dona gastos por sección ──
+  const secSlices = [];
+  S.data.secciones.forEach((s, si) => {
+    if (esTarjetaSec((s.titulo||"").toLowerCase())) return;
+    let t = (s.items||[]).reduce((a,it) => a+num(it.monto),0)
+          + (s.cats||[]).reduce((a,cat) => a+(cat.items||[]).reduce((b,i) => b+num(i.monto),0),0);
+    if (t > 0) secSlices.push({ label: s.titulo, val: t, color: COLORES[si%COLORES.length] });
+  });
+
+  if (secSlices.length) {
+    const card1 = ce("div"); card1.className = "grafico-card";
+    card1.innerHTML = `<div class="grafico-titulo">Gastos por sección</div>`;
+    const cw1 = ce("div"); cw1.className = "grafico-canvas-wrap";
+    const c1 = makeCanvas(SZ, SZ);
+    cw1.appendChild(c1); card1.appendChild(cw1);
+    const ley1 = ce("div"); ley1.className = "grafico-leyenda";
+    const totSl = secSlices.reduce((a,s)=>a+s.val,0);
+    secSlices.forEach(s => {
+      const pct = totSl ? Math.round(s.val/totSl*100) : 0;
+      const li = ce("div"); li.className = "ley-item";
+      li.innerHTML = `<span class="ley-dot" style="background:${s.color}"></span>${esc(s.label)}<span class="ley-val">${pct}%</span>`;
+      ley1.appendChild(li);
+    });
+    card1.appendChild(ley1);
+    wrap.appendChild(card1);
+    requestAnimationFrame(() => drawDona(c1, secSlices));
+  }
+
+  // ── Gráfico 2: Barras cobrado vs gastos ──
+  const W2 = Math.min(360, window.innerWidth - 60);
+  const barH2 = 28, gap2 = 14;
+  const barItems = [
+    { label: "Cobrado", val: totalIngresos, color: "#16a34a" },
+    { label: "Gastos",  val: tot,           color: "#dc2626" },
+    { label: quedan >= 0 ? "Sobrante" : "Déficit", val: Math.abs(quedan), color: quedan >= 0 ? "#2563eb" : "#f97316" },
+  ];
+  const card2 = ce("div"); card2.className = "grafico-card";
+  card2.innerHTML = `<div class="grafico-titulo">Cobrado vs Gastos</div>`;
+  const cw2 = ce("div"); cw2.className = "grafico-canvas-wrap";
+  const c2 = makeCanvas(W2, barItems.length*(barH2+gap2)-gap2);
+  cw2.appendChild(c2); card2.appendChild(cw2);
+  const ley2 = ce("div"); ley2.className = "grafico-leyenda";
+  barItems.forEach(it => {
+    const li = ce("div"); li.className = "ley-item";
+    li.innerHTML = `<span class="ley-dot" style="background:${it.color}"></span>${it.label}<span class="ley-val">${ars(it.val)}</span>`;
+    ley2.appendChild(li);
+  });
+  card2.appendChild(ley2);
+  wrap.appendChild(card2);
+  requestAnimationFrame(() => drawBarras(c2, barItems));
+
+  // ── Gráfico 3: Dona pagado vs pendiente ──
+  if (pag + pend > 0) {
+    const slices3 = [
+      { label: "Pagado",    val: pag,  color: "#16a34a" },
+      { label: "Pendiente", val: pend, color: "#f97316" },
+    ].filter(s => s.val > 0);
+    const card3 = ce("div"); card3.className = "grafico-card";
+    card3.innerHTML = `<div class="grafico-titulo">Pagado vs Pendiente</div>`;
+    const cw3 = ce("div"); cw3.className = "grafico-canvas-wrap";
+    const c3 = makeCanvas(SZ, SZ);
+    cw3.appendChild(c3); card3.appendChild(cw3);
+    const ley3 = ce("div"); ley3.className = "grafico-leyenda";
+    slices3.forEach(s => {
+      const pct = (pag+pend) ? Math.round(s.val/(pag+pend)*100) : 0;
+      const li = ce("div"); li.className = "ley-item";
+      li.innerHTML = `<span class="ley-dot" style="background:${s.color}"></span>${s.label}<span class="ley-val">${ars(s.val)} (${pct}%)</span>`;
+      ley3.appendChild(li);
+    });
+    card3.appendChild(ley3);
+    wrap.appendChild(card3);
+    requestAnimationFrame(() => drawDona(c3, slices3));
+  }
+
   return wrap;
 }
 
