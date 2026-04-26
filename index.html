@@ -324,11 +324,12 @@
   /* ─── ITEMS ─────────────────────────────────────── */
   .item-row {
     display: grid;
-    grid-template-columns: 1fr auto auto auto auto;
+    grid-template-columns: 1fr minmax(55px,80px) minmax(55px,90px) auto auto auto;
     align-items: center;
     border-bottom: 1px solid var(--border);
     transition: background 0.1s;
   }
+  .ic-fin { color: var(--text-soft); font-size: 10px; white-space: nowrap; padding: 4px 6px; }
 
   .item-row:last-child { border-bottom: none; }
   .item-row:hover { background: #fafaf8; }
@@ -765,11 +766,24 @@ function render() {
 
   // Totales
   let tot = 0, pag = 0, pend = 0;
-  S.data.secciones.forEach(s => s.items.forEach(it => {
-    const m = num(it.monto);
-    tot += m;
-    if (it.pagado) pag += m; else pend += m;
-  }));
+  S.data.secciones.forEach((s, si) => {
+    const esTar = esTarjetaSec((s.titulo||"").toLowerCase());
+    // items normales
+    (s.items||[]).forEach(it => {
+      const m = num(it.monto);
+      tot += m;
+      // tarjeta sections: no sumar a pag/pend (se pagan desde debito)
+      if (!esTar) {
+        if (it.pagado) pag += m; else pend += m;
+      }
+    });
+    // cats (Extras y Variables)
+    (s.cats||[]).forEach(cat => {
+      const m = (cat.items||[]).reduce((a,i) => a + num(i.monto), 0);
+      tot += m;
+      if (cat.pagado) pag += m; else pend += m;
+    });
+  });
   const cob    = S.data.cobrado.reduce((a,c) => a + num(c.monto), 0);
   const extraTot = (S.data.extras||[]).reduce((a,e) => a + (e.items||[]).reduce((b,i) => b + num(i.monto), 0), 0);
   const totalIngresos = cob + extraTot;
@@ -1079,10 +1093,12 @@ function buildItem(it, si, ii) {
       it = S.data.secciones[si].items[ii];
     }
   }
-  const finHtml = fin ? '<span style="font-size:10px;color:var(--text-soft);">fin: ' + fin + '</span>' : '';
   const cuotasHtml = it.cuotas
-    ? `<div class="ic ic-cuotas" style="flex-direction:column;align-items:flex-start;gap:1px;"><span>${esc(it.cuotas)}</span>${finHtml}</div>`
+    ? `<div class="ic ic-cuotas">${esc(it.cuotas)}</div>`
     : `<div class="ic ic-cuotas"></div>`;
+  const finHtml = fin
+    ? `<div class="ic ic-fin">fin: ${fin}</div>`
+    : `<div class="ic ic-fin"></div>`;
 
   const badgeHtml = esTar ? "" : `
     <div class="ic ic-estado">
@@ -1094,6 +1110,7 @@ function buildItem(it, si, ii) {
   row.innerHTML = `
     <div class="ic ic-nombre">${esc(it.nombre)}</div>
     ${cuotasHtml}
+    ${finHtml}
     <div class="ic ic-monto">${ars(num(it.monto))}</div>
     ${badgeHtml}
     <div class="ic-acciones">
