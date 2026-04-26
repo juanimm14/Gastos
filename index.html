@@ -1051,13 +1051,10 @@ function esTarjeta(si) {
 }
 
 function getTarjetaTotal(nombre) {
-  // Find a tarjeta section whose title matches this item nombre
   if (!S.data.secciones) return null;
-  const n = nombre.toLowerCase();
-  const sec = S.data.secciones.find(s => {
-    const t = (s.titulo||"").toLowerCase();
-    return esTarjetaSec(t) && (t.includes(n) || n.includes(t.split(" ").find(w=>w.length>3)||""));
-  });
+  const n = nombre.trim().toLowerCase();
+  // Match exacto: el titulo de la seccion debe ser igual al nombre del item
+  const sec = S.data.secciones.find(s => (s.titulo||"").trim().toLowerCase() === n);
   if (!sec) return null;
   return (sec.items||[]).reduce((a,i) => a + num(i.monto), 0);
 }
