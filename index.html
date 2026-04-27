@@ -553,6 +553,29 @@
 
 <!-- ════════ LOGIN ════════ -->
 <div id="auth-screen" style="display:none">
+  <div class="auth-card">
+    <div class="auth-title">Mis Gastos</div>
+    <div class="auth-sub">Ingresá con tu cuenta</div>
+    <div id="auth-error" class="auth-error"></div>
+    <button class="btn btn-full" onclick="doLoginGoogle()" style="background:#fff;border:1px solid #dadce0;color:#3c4043;font-weight:500;justify-content:center;gap:10px;margin-bottom:16px;padding:10px;">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px;height:20px;">
+      Continuar con Google
+    </button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <hr style="flex:1;border:none;border-top:1px solid #e5e7eb;">
+      <span style="color:#9ca3af;font-size:12px;">o</span>
+      <hr style="flex:1;border:none;border-top:1px solid #e5e7eb;">
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Entrar</button>
+  </div>
 </div>
 
 <!-- ════════ APP ════════ -->
@@ -627,7 +650,8 @@
 
 import { initializeApp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+         GoogleAuthProvider, signInWithPopup }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -685,16 +709,35 @@ onAuthStateChanged(auth, u => {
   }
 });
 
-window.doLogin = async () => {};
-
-// Auto-login
-(async () => {
-  try {
-    await signInWithEmailAndPassword(auth, "juanimm91@gmail.com", "123456");
-  } catch(e) {
-    console.error("Auto-login failed:", e);
+window.doLogin = async () => {
+  const email = document.getElementById("login-email").value.trim();
+  const pass  = document.getElementById("login-pass").value;
+  const errEl = document.getElementById("auth-error");
+  errEl.style.display = "none";
+  if (!email || !pass) {
+    errEl.textContent = "Completá email y contraseña.";
+    errEl.style.display = "block";
+    return;
   }
-})();
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    errEl.textContent = "Email o contraseña incorrectos.";
+    errEl.style.display = "block";
+  }
+};
+
+window.doLoginGoogle = async () => {
+  const errEl = document.getElementById("auth-error");
+  errEl.style.display = "none";
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    errEl.textContent = "No se pudo iniciar sesión con Google.";
+    errEl.style.display = "block";
+  }
+};
 
 window.doLogout = () => signOut(auth);
 
