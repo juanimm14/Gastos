@@ -324,12 +324,13 @@
   /* ─── ITEMS ─────────────────────────────────────── */
   .item-row {
     display: grid;
-    grid-template-columns: 1fr minmax(55px,80px) minmax(55px,90px) auto auto auto;
+    grid-template-columns: 1fr auto auto auto;
     align-items: center;
     border-bottom: 1px solid var(--border);
     transition: background 0.1s;
   }
   .ic-fin { color: var(--text-soft); font-size: 11px; white-space: nowrap; padding: 4px 6px; }
+  .ic-sub { color: var(--text-soft); font-size: 12px; margin-top: 1px; }
 
   .item-row:last-child { border-bottom: none; }
   .item-row:hover { background: #fafaf8; }
@@ -565,7 +566,7 @@
     .dot { width: 9px; height: 9px; }
 
     /* Filas de items: SIN padding vertical, todo junto */
-    .item-row { grid-template-columns: 1fr auto auto auto auto; }
+    .item-row { grid-template-columns: 1fr auto auto auto; }
     .ic { padding: 5px 6px; font-size: 15px; }
     .ic-cuotas { font-size: 12px; color: var(--text-soft); }
     .ic-monto { font-size: 15px; font-weight: 700; }
@@ -1238,12 +1239,8 @@ function buildItem(it, si, ii) {
       it = S.data.secciones[si].items[ii];
     }
   }
-  const cuotasHtml = it.cuotas
-    ? `<div class="ic ic-cuotas">${esc(it.cuotas)}</div>`
-    : `<div class="ic ic-cuotas"></div>`;
-  const finHtml = fin
-    ? `<div class="ic ic-fin">fin: ${fin}</div>`
-    : `<div class="ic ic-fin"></div>`;
+  const sublinea = [it.cuotas ? esc(it.cuotas) : "", fin ? `fin: ${fin}` : ""].filter(Boolean).join(" · ");
+  const subHtml = sublinea ? `<div class="ic-sub">${sublinea}</div>` : "";
 
   const badgeHtml = esTar ? "" : `
     <div class="ic ic-estado">
@@ -1253,9 +1250,7 @@ function buildItem(it, si, ii) {
     </div>`;
 
   row.innerHTML = `
-    <div class="ic ic-nombre">${esc(it.nombre)}</div>
-    ${cuotasHtml}
-    ${finHtml}
+    <div class="ic ic-nombre">${esc(it.nombre)}${subHtml}</div>
     <div class="ic ic-monto">${ars(num(it.monto))}</div>
     ${badgeHtml}
     <div class="ic-acciones">
