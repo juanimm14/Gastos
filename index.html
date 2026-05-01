@@ -835,11 +835,26 @@ function guardarDebounced() {
 }
 
 // Copiar mes anterior
+function avanzarCuota(cuotaStr) {
+  // Devuelve la cuota avanzada, o null si ya terminó
+  if (!cuotaStr) return cuotaStr;
+  const norm = cuotaStr.replace(/\s+de\s+/i, "/").replace("-", "/");
+  const m = norm.match(/(\d+)\/(\d+)/);
+  if (!m) return cuotaStr;
+  const actual = parseInt(m[1]), total = parseInt(m[2]);
+  if (actual >= total) return null; // ya terminó
+  const nueva = actual + 1;
+  // Mantener el formato original
+  if (/\s+de\s+/i.test(cuotaStr)) return `${nueva} de ${total}`;
+  return `${nueva}/${total}`;
+}
+
 window.abrirCopiarMes = () => {
   abrirModal("Copiar mes anterior",
     `<p style="color:var(--text-soft);font-size:14px;">
       Se copiará la <strong>estructura y montos</strong> del mes anterior.<br>
-      Los estados de pago se resetearán a pendiente.
+      Los estados de pago se resetearán a pendiente.<br>
+      Las cuotas avanzarán un mes. Los ítems ya finalizados no se copiarán.
     </p>`,
     async () => {
       const pm = S.month === 0 ? 11 : S.month - 1;
@@ -852,12 +867,19 @@ window.abrirCopiarMes = () => {
         if (snap.exists()) {
           const prev = snap.data();
           S.data.secciones = deep(prev.secciones).map(s => ({
-            ...s, items: (s.items||[]).map(it => ({ ...it, pagado: false }))
+            ...s,
+            items: (s.items||[])
+              .map(it => {
+                const nuevaCuota = avanzarCuota(it.cuotas);
+                if (nuevaCuota === null) return null; // item finalizado, no copiar
+                return { ...it, pagado: false, cuotas: nuevaCuota };
+              })
+              .filter(it => it !== null)
           }));
           S.data.cobrado = deep(prev.cobrado||[]).map(c => ({ ...c, monto: 0 }));
           guardar();
           render();
-          toast("Estructura copiada — ajustá los montos");
+          toast("Mes copiado — cuotas actualizadas");
         } else {
           toast("No hay datos del mes anterior");
         }
