@@ -535,70 +535,71 @@
   /* ─── RESPONSIVE ────────────────────────────────── */
   @media (max-width: 580px) {
     /* Base uniforme */
-    body { font-size: 16px; }
+    body { font-size: 15px; }
 
     /* Header compacto */
     header, .mes-strip { padding-left: 12px; padding-right: 12px; }
-    header { height: 48px; }
-    .header-title { font-size: 20px; }
+    header { height: 44px; }
+    .header-title { font-size: 18px; }
 
     /* Mes strip */
-    .mes-full { font-size: 20px; }
-    .mes-pill { font-size: 13px; padding: 3px 12px; }
-    .mes-strip { padding-top: 7px; padding-bottom: 7px; }
+    .mes-full { font-size: 18px; }
+    .mes-pill { font-size: 12px; padding: 2px 10px; }
+    .mes-strip { padding-top: 5px; padding-bottom: 5px; gap: 6px; }
 
-    /* Resumen bar compacto */
-    .resumen-bar { padding: 6px 12px; flex-wrap: nowrap; overflow-x: auto; }
+    /* Resumen bar muy compacto */
+    .resumen-bar { padding: 5px 12px; flex-wrap: nowrap; overflow-x: auto; gap: 0; }
     .rb-item { padding-right: 10px; margin-right: 10px; }
-    .rb-label { font-size: 11px; }
-    .rb-val { font-size: 16px; }
+    .rb-label { font-size: 10px; }
+    .rb-val { font-size: 14px; }
 
     /* Main sin tanto padding */
-    main { padding: 8px 10px; }
+    main { padding: 6px 8px; }
 
-    /* Secciones */
-    .seccion { margin-bottom: 8px; }
-    .sec-header { padding: 8px 12px; }
-    .sec-titulo { font-size: 17px; font-weight: 700; }
-    .sec-total { font-size: 16px; font-weight: 700; color: var(--text); }
-    .sec-chevron { font-size: 14px; }
-    .dot { width: 10px; height: 10px; }
+    /* Secciones muy apretadas */
+    .seccion { margin-bottom: 6px; border-radius: 8px; }
+    .sec-header { padding: 6px 10px; }
+    .sec-titulo { font-size: 15px; font-weight: 700; }
+    .sec-total { font-size: 15px; font-weight: 700; color: var(--text); }
+    .sec-chevron { font-size: 13px; }
+    .dot { width: 9px; height: 9px; }
 
-    /* Filas de items: nombre | fin/cuota | monto | badge | acciones */
+    /* Filas de items: SIN padding vertical, todo junto */
     .item-row { grid-template-columns: 1fr auto auto auto auto; }
-    .ic { padding: 8px 8px; font-size: 16px; }
+    .ic { padding: 5px 6px; font-size: 15px; }
     .ic-cuotas { display: none; }
-    .ic-monto { font-size: 16px; font-weight: 600; }
-    .ic-fin { font-size: 13px; min-width: 0; padding: 4px 6px 4px 2px; color: var(--text-soft); }
+    .ic-monto { font-size: 15px; font-weight: 700; }
+    .ic-fin { font-size: 12px; min-width: 0; padding: 2px 4px; color: var(--text-soft); white-space: nowrap; }
 
-    /* Badge más chico */
-    .badge { font-size: 13px; padding: 3px 9px; }
+    /* Badge pequeño */
+    .badge { font-size: 12px; padding: 2px 7px; border-radius: 8px; }
 
-    /* Botones de acción más chicos */
-    .btn-icon { font-size: 14px; padding: 5px 8px; }
-    .btn-sm { font-size: 14px; padding: 6px 11px; }
-    .btn { font-size: 16px; padding: 9px 16px; }
+    /* Botones de acción mínimos */
+    .btn-icon { font-size: 13px; padding: 3px 6px; }
+    .ic-acciones { gap: 2px; padding: 4px 6px; }
+    .btn-sm { font-size: 13px; padding: 5px 10px; }
+    .btn { font-size: 15px; padding: 8px 14px; }
 
     /* Add row */
-    .add-row { padding: 7px 10px; }
-    .add-row input, .add-row select { font-size: 15px; }
+    .add-row { padding: 5px 8px; gap: 4px; }
+    .add-row input, .add-row select { font-size: 14px; padding: 5px 8px; }
 
     /* Inputs modales */
-    input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { font-size: 16px; padding: 10px 12px; }
+    input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { font-size: 15px; padding: 9px 11px; }
 
     /* Resumen final */
     .rf-grid { grid-template-columns: 1fr 1fr; }
     .rf-celda:nth-child(2) { border-right: none; }
     .rf-celda:nth-child(3) { grid-column: 1/-1; border-top: 1px solid var(--border); border-right: none; }
-    .rf-header { font-size: 16px; padding: 9px 14px; }
-    .rf-label { font-size: 11px; }
-    .rf-val { font-size: 22px; }
-    .rf-celda { padding: 10px 14px; }
+    .rf-header { font-size: 14px; padding: 7px 12px; }
+    .rf-label { font-size: 10px; }
+    .rf-val { font-size: 20px; }
+    .rf-celda { padding: 8px 12px; }
 
     /* Gráficos */
-    .grafico-titulo { font-size: 13px; }
-    .ley-item { font-size: 13px; }
-    .empty-msg { font-size: 15px; }
+    .grafico-titulo { font-size: 12px; }
+    .ley-item { font-size: 12px; }
+    .empty-msg { font-size: 14px; }
   }
 </style>
 </head>
