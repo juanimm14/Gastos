@@ -1099,8 +1099,16 @@ function buildSeccion(sec, si) {
         (cat.items||[]).forEach((it, ii) => {
           const iRow = ce("div");
           iRow.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 12px 7px 32px;border-top:1px solid var(--border);font-size:13px;";
+          const finCat = calcFinCuota(it.cuotas);
+          const cpCat = [];
+          if (it.cuotas) cpCat.push(`<span class="ic-sub-cuota">${esc(it.cuotas)}</span>`);
+          if (finCat)    cpCat.push(`<span class="ic-sub-fin">fin: ${finCat}</span>`);
+          const cpHtml = cpCat.length ? `<div class="ic-sub" style="margin-top:2px;">${cpCat.join(' · ')}</div>` : "";
           iRow.innerHTML = `
-            <span style="color:var(--text-soft);">${esc(it.nota || ("Cobro " + (ii+1)))}</span>
+            <div>
+              <span style="color:var(--text-soft);">${esc(it.nota || ("Cobro " + (ii+1)))}</span>
+              ${cpHtml}
+            </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-weight:500;">${ars(num(it.monto))}</span>
               <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
@@ -1112,12 +1120,16 @@ function buildSeccion(sec, si) {
               <div class="field"><label>Nota (opcional)</label>
                 <input type="text" id="m-in" value="${esc(it.nota||'')}">
               </div>
+              <div class="field"><label>Cuotas (ej: 2/6)</label>
+                <input type="text" id="m-iq" value="${esc(it.cuotas||'')}">
+              </div>
               <div class="field"><label>Monto ($)</label>
                 <input type="number" id="m-im" value="${it.monto||0}" min="0">
               </div>
             `, () => {
-              S.data.secciones[si].cats[ci].items[ii].nota  = q("m-in").value.trim();
-              S.data.secciones[si].cats[ci].items[ii].monto = parseFloat(q("m-im").value)||0;
+              S.data.secciones[si].cats[ci].items[ii].nota   = q("m-in").value.trim();
+              S.data.secciones[si].cats[ci].items[ii].cuotas = q("m-iq").value.trim();
+              S.data.secciones[si].cats[ci].items[ii].monto  = parseFloat(q("m-im").value)||0;
               guardarDebounced(); cerrarModal(); render();
             });
           });
@@ -1130,20 +1142,22 @@ function buildSeccion(sec, si) {
 
         // Agregar monto dentro de categoría
         const addI = ce("div");
-        addI.style.cssText = "display:flex;gap:6px;padding:7px 12px 7px 32px;border-top:1px dashed var(--border);background:#f9f9f7;";
+        addI.style.cssText = "display:flex;gap:6px;padding:7px 12px 7px 32px;border-top:1px dashed var(--border);background:#f9f9f7;flex-wrap:wrap;";
         addI.innerHTML = `
-          <input type="text"   class="inp-nota"   placeholder="Nota (opcional)" style="flex:1;padding:5px 8px;font-size:12px;">
-          <input type="number" class="inp-imonto"  placeholder="Monto $" min="0" style="width:110px;padding:5px 8px;font-size:12px;">
+          <input type="text"   class="inp-nota"    placeholder="Nota (opcional)" style="flex:1;min-width:80px;padding:5px 8px;font-size:12px;">
+          <input type="text"   class="inp-cuotas2" placeholder="Cuotas (ej: 1/6)" style="width:100px;flex:0 0 100px;padding:5px 8px;font-size:12px;">
+          <input type="number" class="inp-imonto"  placeholder="Monto $" min="0" style="width:100px;flex:0 0 100px;padding:5px 8px;font-size:12px;">
           <button class="btn btn-success btn-sm" style="font-size:12px;">+ Agregar</button>
         `;
         const iN = addI.querySelector(".inp-nota");
+        const iQ = addI.querySelector(".inp-cuotas2");
         const iM = addI.querySelector(".inp-imonto");
         const iB = addI.querySelector("button");
         const addMonto = () => {
           const monto = parseFloat(iM.value)||0;
           if (!monto) { toast("Ingresá un monto"); return; }
           if (!S.data.secciones[si].cats[ci].items) S.data.secciones[si].cats[ci].items = [];
-          S.data.secciones[si].cats[ci].items.push({ nota: iN.value.trim(), monto });
+          S.data.secciones[si].cats[ci].items.push({ nota: iN.value.trim(), cuotas: iQ.value.trim(), monto });
           guardarDebounced(); render();
         };
         iB.addEventListener("click", addMonto);
@@ -1456,8 +1470,16 @@ function buildExtras() {
       (e.items||[]).forEach((it, ii) => {
         const iRow = ce("div");
         iRow.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 12px 7px 32px;border-top:1px solid var(--border);font-size:13px;";
+        const finExtra = calcFinCuota(it.cuotas);
+        const cuotasParts = [];
+        if (it.cuotas) cuotasParts.push(`<span class="ic-sub-cuota">${esc(it.cuotas)}</span>`);
+        if (finExtra)  cuotasParts.push(`<span class="ic-sub-fin">fin: ${finExtra}</span>`);
+        const cuotasHtml = cuotasParts.length ? `<div class="ic-sub" style="margin-top:2px;">${cuotasParts.join(' · ')}</div>` : "";
         iRow.innerHTML = `
-          <span style="color:var(--text-soft);">${esc(it.nota||("Cobro " + (ii+1)))}</span>
+          <div>
+            <span style="color:var(--text-soft);">${esc(it.nota||("Cobro " + (ii+1)))}</span>
+            ${cuotasHtml}
+          </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="color:var(--green);font-weight:500;">${ars(num(it.monto))}</span>
             <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
@@ -1469,12 +1491,16 @@ function buildExtras() {
             <div class="field"><label>Nota (opcional)</label>
               <input type="text" id="m-in" value="${esc(it.nota||'')}">
             </div>
+            <div class="field"><label>Cuotas (ej: 2/6)</label>
+              <input type="text" id="m-iq" value="${esc(it.cuotas||'')}">
+            </div>
             <div class="field"><label>Monto ($)</label>
               <input type="number" id="m-im" value="${it.monto||0}" min="0">
             </div>
           `, () => {
-            S.data.extras[ei].items[ii].nota  = q("m-in").value.trim();
-            S.data.extras[ei].items[ii].monto = parseFloat(q("m-im").value)||0;
+            S.data.extras[ei].items[ii].nota   = q("m-in").value.trim();
+            S.data.extras[ei].items[ii].cuotas = q("m-iq").value.trim();
+            S.data.extras[ei].items[ii].monto  = parseFloat(q("m-im").value)||0;
             guardarDebounced(); cerrarModal(); render();
           });
         });
@@ -1487,20 +1513,22 @@ function buildExtras() {
 
       // Agregar cobro dentro de la categoría
       const addItem = ce("div");
-      addItem.style.cssText = "display:flex;gap:6px;padding:7px 12px 7px 32px;border-top:1px dashed var(--border);background:#f9f9f7;";
+      addItem.style.cssText = "display:flex;gap:6px;padding:7px 12px 7px 32px;border-top:1px dashed var(--border);background:#f9f9f7;flex-wrap:wrap;";
       addItem.innerHTML = `
-        <input type="text"   class="inp-nota"  placeholder="Nota (opcional)" style="flex:1;min-width:80px;padding:5px 8px;font-size:12px;">
-        <input type="number" class="inp-imonto" placeholder="Monto $" min="0" style="width:110px;padding:5px 8px;font-size:12px;">
+        <input type="text"   class="inp-nota"   placeholder="Nota (opcional)" style="flex:1;min-width:80px;padding:5px 8px;font-size:12px;">
+        <input type="text"   class="inp-cuotas" placeholder="Cuotas (ej: 1/6)" style="width:100px;flex:0 0 100px;padding:5px 8px;font-size:12px;">
+        <input type="number" class="inp-imonto"  placeholder="Monto $" min="0" style="width:100px;flex:0 0 100px;padding:5px 8px;font-size:12px;">
         <button class="btn btn-success btn-sm" style="font-size:12px;">+ Agregar</button>
       `;
       const iN = addItem.querySelector(".inp-nota");
+      const iQ = addItem.querySelector(".inp-cuotas");
       const iM = addItem.querySelector(".inp-imonto");
       const iB = addItem.querySelector("button");
       const addCobro = () => {
         const monto = parseFloat(iM.value)||0;
         if (!monto) { toast("Ingresá un monto"); return; }
         if (!S.data.extras[ei].items) S.data.extras[ei].items = [];
-        S.data.extras[ei].items.push({ nota: iN.value.trim(), monto });
+        S.data.extras[ei].items.push({ nota: iN.value.trim(), cuotas: iQ.value.trim(), monto });
         guardarDebounced(); render();
       };
       iB.addEventListener("click", addCobro);
