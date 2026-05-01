@@ -271,8 +271,8 @@
   }
 
   .rb-item:last-child { border-right: none; margin-right: 0; }
-  .rb-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-soft); font-weight: 600; }
-  .rb-val { font-size: 20px; font-weight: 600; }
+  .rb-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-soft); font-weight: 600; }
+  .rb-val { font-size: 17px; font-weight: 600; }
 
   /* ─── MAIN ──────────────────────────────────────── */
   main {
@@ -306,9 +306,9 @@
   }
 
   .sec-header-left { display: flex; align-items: center; gap: 9px; min-width: 0; }
-  .sec-titulo { font-weight: 600; font-size: 18px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sec-titulo { font-weight: 600; font-size: 15px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sec-header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-  .sec-total { font-size: 18px; font-weight: 600; color: var(--text-soft); }
+  .sec-total { font-size: 15px; font-weight: 600; color: var(--text-soft); }
   .sec-chevron { font-size: 13px; color: var(--text-soft); transition: transform 0.2s; }
 
   .seccion.collapsed .sec-chevron { transform: rotate(-90deg); }
@@ -329,14 +329,14 @@
     border-bottom: 1px solid var(--border);
     transition: background 0.1s;
   }
-  .ic-fin { color: var(--text-soft); font-size: 13px; white-space: nowrap; padding: 4px 6px; }
+  .ic-fin { color: var(--text-soft); font-size: 11px; white-space: nowrap; padding: 4px 6px; }
 
   .item-row:last-child { border-bottom: none; }
   .item-row:hover { background: #fafaf8; }
 
-  .ic { padding: 9px 13px; font-size: 18px; }
+  .ic { padding: 9px 13px; font-size: 15px; }
   .ic-nombre { color: var(--text); }
-  .ic-cuotas { color: var(--text-soft); font-size: 14px; white-space: nowrap; }
+  .ic-cuotas { color: var(--text-soft); font-size: 12px; white-space: nowrap; }
   .ic-monto  { font-weight: 500; white-space: nowrap; text-align: right; }
   .ic-estado { text-align: center; white-space: nowrap; }
   .ic-acciones { display: flex; gap: 3px; padding: 6px 9px; }
@@ -534,41 +534,71 @@
 
   /* ─── RESPONSIVE ────────────────────────────────── */
   @media (max-width: 580px) {
-    body { font-size: 23px; }
-    header, .mes-strip { padding-left: 14px; padding-right: 14px; }
-    header { height: 68px; }
-    .header-title { font-size: 30px; }
-    main { padding: 12px 14px; }
-    .ic { padding: 14px 10px; font-size: 22px; }
+    /* Base uniforme */
+    body { font-size: 16px; }
+
+    /* Header compacto */
+    header, .mes-strip { padding-left: 12px; padding-right: 12px; }
+    header { height: 48px; }
+    .header-title { font-size: 20px; }
+
+    /* Mes strip */
+    .mes-full { font-size: 20px; }
+    .mes-pill { font-size: 13px; padding: 3px 12px; }
+    .mes-strip { padding-top: 7px; padding-bottom: 7px; }
+
+    /* Resumen bar compacto */
+    .resumen-bar { padding: 6px 12px; flex-wrap: nowrap; overflow-x: auto; }
+    .rb-item { padding-right: 10px; margin-right: 10px; }
+    .rb-label { font-size: 11px; }
+    .rb-val { font-size: 16px; }
+
+    /* Main sin tanto padding */
+    main { padding: 8px 10px; }
+
+    /* Secciones */
+    .seccion { margin-bottom: 8px; }
+    .sec-header { padding: 8px 12px; }
+    .sec-titulo { font-size: 17px; font-weight: 700; }
+    .sec-total { font-size: 16px; font-weight: 700; color: var(--text); }
+    .sec-chevron { font-size: 14px; }
+    .dot { width: 10px; height: 10px; }
+
+    /* Filas de items: nombre | fin/cuota | monto | badge | acciones */
+    .item-row { grid-template-columns: 1fr auto auto auto auto; }
+    .ic { padding: 8px 8px; font-size: 16px; }
     .ic-cuotas { display: none; }
-    .ic-monto { font-size: 22px; }
-    .item-row { grid-template-columns: 1fr auto auto auto; }
+    .ic-monto { font-size: 16px; font-weight: 600; }
+    .ic-fin { font-size: 13px; min-width: 0; padding: 4px 6px 4px 2px; color: var(--text-soft); }
+
+    /* Badge más chico */
+    .badge { font-size: 13px; padding: 3px 9px; }
+
+    /* Botones de acción más chicos */
+    .btn-icon { font-size: 14px; padding: 5px 8px; }
+    .btn-sm { font-size: 14px; padding: 6px 11px; }
+    .btn { font-size: 16px; padding: 9px 16px; }
+
+    /* Add row */
+    .add-row { padding: 7px 10px; }
+    .add-row input, .add-row select { font-size: 15px; }
+
+    /* Inputs modales */
+    input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { font-size: 16px; padding: 10px 12px; }
+
+    /* Resumen final */
     .rf-grid { grid-template-columns: 1fr 1fr; }
     .rf-celda:nth-child(2) { border-right: none; }
     .rf-celda:nth-child(3) { grid-column: 1/-1; border-top: 1px solid var(--border); border-right: none; }
-    .resumen-bar { padding: 10px 14px; }
-    .rb-item { padding-right: 12px; margin-right: 12px; }
-    .rb-label { font-size: 16px; }
-    .rb-val { font-size: 26px; }
-    .sec-titulo { font-size: 23px; }
-    .sec-total { font-size: 23px; }
-    .btn { font-size: 20px; padding: 13px 22px; }
-    .btn-sm { font-size: 18px; padding: 10px 16px; }
-    .btn-icon { font-size: 20px; padding: 8px 13px; }
-    .badge { font-size: 18px; padding: 7px 15px; }
-    .mes-full { font-size: 30px; }
-    .mes-pill { font-size: 17px; padding: 5px 18px; }
-    .rf-val { font-size: 30px; }
-    .rf-label { font-size: 16px; }
-    .rf-header { font-size: 21px; }
-    .empty-msg { font-size: 20px; }
-    .add-row input, .add-row select { font-size: 20px; }
-    input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { font-size: 21px; padding: 13px 15px; }
-    .ic-fin { font-size: 17px; }
-    .sec-chevron { font-size: 19px; }
-    .grafico-titulo { font-size: 17px; }
-    .ley-item { font-size: 17px; }
-    .dot { width: 11px; height: 11px; }
+    .rf-header { font-size: 16px; padding: 9px 14px; }
+    .rf-label { font-size: 11px; }
+    .rf-val { font-size: 22px; }
+    .rf-celda { padding: 10px 14px; }
+
+    /* Gráficos */
+    .grafico-titulo { font-size: 13px; }
+    .ley-item { font-size: 13px; }
+    .empty-msg { font-size: 15px; }
   }
 </style>
 </head>
