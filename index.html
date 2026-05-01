@@ -331,6 +331,8 @@
   }
   .ic-fin { color: var(--text-soft); font-size: 11px; white-space: nowrap; padding: 4px 6px; }
   .ic-sub { color: var(--text-soft); font-size: 12px; margin-top: 1px; }
+  .ic-sub-cuota { color: var(--accent); font-weight: 600; }
+  .ic-sub-fin   { color: var(--amber); font-weight: 500; }
 
   .item-row:last-child { border-bottom: none; }
   .item-row:hover { background: #fafaf8; }
@@ -1231,7 +1233,7 @@ function buildItem(it, si, ii) {
   // Auto-sum from tarjeta section if this item references one
   const secTitulo = (S.data.secciones[si]?.titulo||"").toLowerCase();
   const esDebitoSec = secTitulo.includes("débito") || secTitulo.includes("debito") || secTitulo.includes("red link");
-  if (esDebitoSec && it.nombre) {
+  if (esDebitoSec && it.nombre && !it.montoManual) {
     const autoTotal = getTarjetaTotal(it.nombre);
     if (autoTotal !== null && autoTotal !== num(it.monto)) {
       // Auto-update the monto to match tarjeta total
@@ -1239,8 +1241,19 @@ function buildItem(it, si, ii) {
       it = S.data.secciones[si].items[ii];
     }
   }
-  const sublinea = [it.cuotas ? esc(it.cuotas) : "", fin ? `fin: ${fin}` : ""].filter(Boolean).join(" · ");
-  const subHtml = sublinea ? `<div class="ic-sub">${sublinea}</div>` : "";
+  const subParts = [];
+  if (it.cuotas) subParts.push(`<span class="ic-sub-cuota">${esc(it.cuotas)}</span>`);
+  if (fin)       subParts.push(`<span class="ic-sub-fin">fin: ${fin}</span>`);
+  const subHtml = subParts.length ? `<div class="ic-sub">${subParts.join(' · ')}</div>` : "";
+
+  const esDebitoItem = (() => {
+    const t = (S.data.secciones[si]?.titulo||"").toLowerCase();
+    return t.includes("débito") || t.includes("debito") || t.includes("red link");
+  })();
+  const lockIcon = esDebitoItem
+    ? `<span title="${it.montoManual ? 'Monto manual (click para auto)' : 'Monto automático (click para manual)'}"
+         style="cursor:pointer;font-size:12px;margin-left:3px;opacity:0.6;" class="lock-toggle">${it.montoManual ? '🔒' : '🔓'}</span>`
+    : "";
 
   const badgeHtml = esTar ? "" : `
     <div class="ic ic-estado">
@@ -1251,7 +1264,7 @@ function buildItem(it, si, ii) {
 
   row.innerHTML = `
     <div class="ic ic-nombre">${esc(it.nombre)}${subHtml}</div>
-    <div class="ic ic-monto">${ars(num(it.monto))}</div>
+    <div class="ic ic-monto">${ars(num(it.monto))}${lockIcon}</div>
     ${badgeHtml}
     <div class="ic-acciones">
       <button class="btn btn-ghost btn-icon btn-sm" title="Editar">✏️</button>
@@ -1265,6 +1278,40 @@ function buildItem(it, si, ii) {
       guardarDebounced();
       render();
     });
+  }
+
+  if (esDebitoItem) {
+    const lockBtn = row.querySelector(".lock-toggle");
+    if (lockBtn) {
+      lockBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (S.data.secciones[si].items[ii].montoManual) {
+          // Desactivar manual → volver a automático
+          delete S.data.secciones[si].items[ii].montoManual;
+          toast("Monto automático activado");
+        } else {
+          // Activar manual: abrir modal para ingresar valor
+          const valActual = num(S.data.secciones[si].items[ii].monto);
+          abrirModal("Monto manual", `
+            <p style="font-size:13px;color:var(--text-soft);margin-bottom:12px;">
+              Ingresá el monto manualmente. Se usará este valor en lugar de la suma automática de la tarjeta.
+            </p>
+            <div class="field"><label>Monto ($)</label>
+              <input type="number" id="m-mm" value="${valActual}" min="0">
+            </div>
+          `, () => {
+            const v = parseFloat(q("m-mm").value)||0;
+            S.data.secciones[si].items[ii].monto = v;
+            S.data.secciones[si].items[ii].montoManual = true;
+            guardarDebounced(); cerrarModal(); render();
+            toast("Monto manual guardado 🔒");
+          });
+        }
+        if (!S.data.secciones[si].items[ii].montoManual) {
+          guardarDebounced(); render();
+        }
+      });
+    }
   }
 
   row.querySelectorAll("button")[0].addEventListener("click", () => editarItem(si, ii));
@@ -1747,7 +1794,9 @@ function editarItem(si, ii) {
       cuotas: q("m-c").value.trim(),
       monto:  parseFloat(q("m-m").value)||0,
       pagado: q("m-p").value === "1",
+      montoManual: S.data.secciones[si].items[ii].montoManual || false,
     };
+    if (!S.data.secciones[si].items[ii].montoManual) delete S.data.secciones[si].items[ii].montoManual;
     guardarDebounced();
     cerrarModal();
     render();
