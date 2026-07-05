@@ -1482,10 +1482,17 @@ function buildExtras() {
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="color:var(--green);font-weight:500;">${ars(num(it.monto))}</span>
+            <span class="badge ${it.pagado ? 'badge-ok' : 'badge-no'}" style="cursor:pointer;">
+              ${it.pagado ? "✓ Pagado" : "✗ Pendiente"}
+            </span>
             <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
             <button class="btn btn-danger btn-icon btn-sm">✕</button>
           </div>
         `;
+        iRow.querySelector(".badge").addEventListener("click", () => {
+          S.data.extras[ei].items[ii].pagado = !S.data.extras[ei].items[ii].pagado;
+          guardarDebounced(); render();
+        });
         iRow.querySelectorAll("button")[0].addEventListener("click", () => {
           abrirModal("Editar cobro", `
             <div class="field"><label>Nota (opcional)</label>
@@ -1497,10 +1504,17 @@ function buildExtras() {
             <div class="field"><label>Monto ($)</label>
               <input type="number" id="m-im" value="${it.monto||0}" min="0">
             </div>
+            <div class="field"><label>Estado</label>
+              <select id="m-ip">
+                <option value="0" ${!it.pagado?'selected':''}>✗ Pendiente</option>
+                <option value="1" ${it.pagado?'selected':''}>✓ Pagado</option>
+              </select>
+            </div>
           `, () => {
             S.data.extras[ei].items[ii].nota   = q("m-in").value.trim();
             S.data.extras[ei].items[ii].cuotas = q("m-iq").value.trim();
             S.data.extras[ei].items[ii].monto  = parseFloat(q("m-im").value)||0;
+            S.data.extras[ei].items[ii].pagado = q("m-ip").value === "1";
             guardarDebounced(); cerrarModal(); render();
           });
         });
