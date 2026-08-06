@@ -295,7 +295,7 @@
   /* ─── ITEMS ─────────────────────────────────────── */
   .item-row {
     display: grid;
-    grid-template-columns: 1fr auto auto auto;
+    grid-template-columns: 1fr 104px 112px 66px;
     align-items: center;
     border-bottom: 1px solid var(--border);
     transition: background 0.1s;
@@ -539,7 +539,7 @@
     .dot { width: 9px; height: 9px; }
 
     /* Filas de items: SIN padding vertical, todo junto */
-    .item-row { grid-template-columns: 1fr auto auto auto; }
+    .item-row { grid-template-columns: 1fr 82px 92px 60px; }
     .ic { padding: 5px 6px; font-size: 15px; }
     .ic-cuotas { font-size: 12px; color: var(--text-soft); }
     .ic-monto { font-size: 15px; font-weight: 700; }
@@ -613,7 +613,7 @@
   <header>
     <span class="header-title">Mis Gastos</span>
     <div style="display:flex;gap:8px;align-items:center">
-      <button class="btn btn-ghost btn-sm" onclick="abrirCopiarMes()">📋 Copiar mes ant.</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirCopiarMes()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> Copiar mes ant.</button>
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">Salir</button>
     </div>
   </header>
@@ -806,7 +806,7 @@ async function cargarMes() {
 function guardar() {
   if (!auth.currentUser) return;
   setDoc(doc(db, "gastos", mesKey()), S.data)
-    .then(() => toast("✓ Guardado"))
+    .then(() => toast("Guardado"))
     .catch(() => toast("Error al guardar"));
 }
 
@@ -969,8 +969,8 @@ function buildSeccion(sec, si) {
     </div>
     <div class="sec-header-right">
       <span class="sec-total">${ars(totSec)}</span>
-      <button class="btn btn-ghost btn-icon btn-sm" title="Editar sección">✏️</button>
-      <button class="btn btn-danger btn-icon btn-sm" title="Eliminar sección">🗑</button>
+      <button class="btn btn-ghost btn-icon btn-sm" title="Editar sección">${ICONS.edit()}</button>
+      <button class="btn btn-danger btn-icon btn-sm" title="Eliminar sección">${ICONS.trash()}</button>
       <span class="sec-chevron">▼</span>
     </div>
   `;
@@ -1030,10 +1030,10 @@ function buildSeccion(sec, si) {
           <div style="display:flex;align-items:center;gap:6px;">
             <span style="font-size:13px;font-weight:600;">${ars(catTotal)}</span>
             <span class="badge ${cat.pagado ? 'badge-ok' : 'badge-no'}" style="font-size:11px;">
-              ${cat.pagado ? "✓ Pagado" : "✗ Pendiente"}
+              ${cat.pagado ? ICONS.check(11)+" Pagado" : ICONS.close(11)+" Pendiente"}
             </span>
-            <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
-            <button class="btn btn-danger btn-icon btn-sm">✕</button>
+            <button class="btn btn-ghost btn-icon btn-sm">${ICONS.edit()}</button>
+            <button class="btn btn-danger btn-icon btn-sm">${ICONS.close()}</button>
           </div>
         `;
 
@@ -1089,8 +1089,8 @@ function buildSeccion(sec, si) {
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-weight:500;">${ars(num(it.monto))}</span>
-              <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
-              <button class="btn btn-danger btn-icon btn-sm">✕</button>
+              <button class="btn btn-ghost btn-icon btn-sm">${ICONS.edit()}</button>
+              <button class="btn btn-danger btn-icon btn-sm">${ICONS.close()}</button>
             </div>
           `;
           iRow.querySelectorAll("button")[0].addEventListener("click", () => {
@@ -1244,13 +1244,13 @@ function buildItem(it, si, ii) {
   })();
   const lockIcon = esDebitoItem
     ? `<span title="${it.montoManual ? 'Monto manual (click para auto)' : 'Monto automático (click para manual)'}"
-         style="cursor:pointer;font-size:12px;margin-left:3px;opacity:0.6;" class="lock-toggle">${it.montoManual ? '🔒' : '🔓'}</span>`
+         style="cursor:pointer;margin-left:4px;opacity:0.55;" class="lock-toggle">${it.montoManual ? ICONS.lock(12) : ICONS.unlock(12)}</span>`
     : "";
 
-  const badgeHtml = esTar ? "" : `
+  const badgeHtml = esTar ? `<div class="ic ic-estado"></div>` : `
     <div class="ic ic-estado">
       <span class="badge ${it.pagado ? 'badge-ok' : 'badge-no'}">
-        ${it.pagado ? "✓ Pagado" : "✗ Pendiente"}
+        ${it.pagado ? ICONS.check(11)+" Pagado" : ICONS.close(11)+" Pendiente"}
       </span>
     </div>`;
 
@@ -1259,8 +1259,8 @@ function buildItem(it, si, ii) {
     <div class="ic ic-monto">${ars(num(it.monto))}${lockIcon}</div>
     ${badgeHtml}
     <div class="ic-acciones">
-      <button class="btn btn-ghost btn-icon btn-sm" title="Editar">✏️</button>
-      <button class="btn btn-danger btn-icon btn-sm" title="Eliminar">✕</button>
+      <button class="btn btn-ghost btn-icon btn-sm" title="Editar">${ICONS.edit()}</button>
+      <button class="btn btn-danger btn-icon btn-sm" title="Eliminar">${ICONS.close()}</button>
     </div>
   `;
 
@@ -1296,7 +1296,7 @@ function buildItem(it, si, ii) {
             S.data.secciones[si].items[ii].monto = v;
             S.data.secciones[si].items[ii].montoManual = true;
             guardarDebounced(); cerrarModal(); render();
-            toast("Monto manual guardado 🔒");
+            toast("Monto manual guardado");
           });
         }
         if (!S.data.secciones[si].items[ii].montoManual) {
@@ -1369,7 +1369,7 @@ function buildExtras() {
   hdr.innerHTML = `
     <div class="sec-header-left">
       <span class="dot d-amber"></span>
-      <span class="sec-titulo">💰 Ingresos Extra</span>
+      <span class="sec-titulo">${ICONS.wallet(14)} Ingresos Extra</span>
     </div>
     <div class="sec-header-right">
       <span class="sec-total" style="color:var(--green)">${ars(totExtra)}</span>
@@ -1405,8 +1405,8 @@ function buildExtras() {
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="color:var(--green);font-weight:600;font-size:13px;">${ars(subTotal)}</span>
-          <button class="btn btn-ghost btn-icon btn-sm" title="Editar categoría">✏️</button>
-          <button class="btn btn-danger btn-icon btn-sm" title="Eliminar categoría">✕</button>
+          <button class="btn btn-ghost btn-icon btn-sm" title="Editar categoría">${ICONS.edit()}</button>
+          <button class="btn btn-danger btn-icon btn-sm" title="Eliminar categoría">${ICONS.close()}</button>
         </div>
       `;
 
@@ -1461,10 +1461,10 @@ function buildExtras() {
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="color:var(--green);font-weight:500;">${ars(num(it.monto))}</span>
             <span class="badge ${it.pagado ? 'badge-ok' : 'badge-no'}" style="cursor:pointer;">
-              ${it.pagado ? "✓ Pagado" : "✗ Pendiente"}
+              ${it.pagado ? ICONS.check(11)+" Pagado" : ICONS.close(11)+" Pendiente"}
             </span>
-            <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
-            <button class="btn btn-danger btn-icon btn-sm">✕</button>
+            <button class="btn btn-ghost btn-icon btn-sm">${ICONS.edit()}</button>
+            <button class="btn btn-danger btn-icon btn-sm">${ICONS.close()}</button>
           </div>
         `;
         iRow.querySelector(".badge").addEventListener("click", () => {
@@ -1590,12 +1590,11 @@ function buildCobrado() {
       row.className = "item-row";
       row.innerHTML = `
         <div class="ic ic-nombre">${esc(c.label)}</div>
-        <div class="ic ic-cuotas"></div>
         <div class="ic ic-monto cobrado-val">${ars(num(c.monto))}</div>
         <div class="ic ic-estado"></div>
         <div class="ic-acciones">
-          <button class="btn btn-ghost btn-icon btn-sm">✏️</button>
-          <button class="btn btn-danger btn-icon btn-sm">✕</button>
+          <button class="btn btn-ghost btn-icon btn-sm">${ICONS.edit()}</button>
+          <button class="btn btn-danger btn-icon btn-sm">${ICONS.close()}</button>
         </div>
       `;
       row.querySelectorAll("button")[0].addEventListener("click", () => editarCobrado(ci));
@@ -1922,6 +1921,20 @@ window.overlayClick = e => {
 };
 
 // ── Helpers ───────────────────────────────────────────
+function svgIcon(path, size) {
+  return `<svg width="${size||13}" height="${size||13}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px">${path}</svg>`;
+}
+const ICONS = {
+  edit:      (s) => svgIcon('<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>', s),
+  trash:     (s) => svgIcon('<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>', s),
+  close:     (s) => svgIcon('<path d="M18 6 6 18"/><path d="M6 6l12 12"/>', s),
+  check:     (s) => svgIcon('<path d="M20 6 9 17l-5-5"/>', s),
+  lock:      (s) => svgIcon('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', s),
+  unlock:    (s) => svgIcon('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.4-2.1"/>', s),
+  wallet:    (s) => svgIcon('<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>', s),
+  clipboard: (s) => svgIcon('<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>', s),
+};
+
 function q(id)     { return document.getElementById(id); }
 function ce(tag)   { return document.createElement(tag); }
 function num(v)    { return parseFloat(v)||0; }
