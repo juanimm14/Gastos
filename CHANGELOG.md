@@ -54,3 +54,10 @@ Investigación de un corte horizontal reportado por captura de pantalla.
 - Agregado `overflow-x: hidden` + `max-width: 100%` en `html, body` como red de seguridad: nada en el diseño necesita scroll horizontal de página completa (la barra de resumen ya tiene su propio scroll interno), así que esto elimina la categoría de bug sin costo visual, se haya encontrado la causa exacta o no.
 
 Snapshot completo de esta versión en `versions/v5/`.
+
+## v6 — 2026-08-06
+El badge de versión estaba escondido (esquina inferior izquierda, letra chica, semi-transparente) — pasó desapercibido.
+
+- Movido el badge de versión al lado del título "Mis Gastos" en el header, como una píldora azul bien visible (`v6`), en vez de una marca de agua tenue en una esquina.
+
+Snapshot completo de esta versión en `versions/v6/`.
