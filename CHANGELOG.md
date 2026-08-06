@@ -25,3 +25,12 @@ Mejoras visuales: consistencia entre plataformas y alineación de datos.
 - Verificado: sintaxis del script validada con `node --check`.
 
 Snapshot completo de esta versión en `versions/v2/`.
+
+## v3 — 2026-08-06
+Fix de un bug de overflow reportado (algunos botones de eliminar se salían de la tarjeta) + mejoras de visibilidad.
+
+- **Bug fix**: la columna de nombre usaba `1fr` puro, que en CSS Grid no se achica por debajo del contenido — con nombres largos empujaba el resto de la fila (botón eliminar incluido) fuera de la tarjeta. Cambiado a `minmax(0,1fr)` para que el nombre ahora se ajuste (haga wrap) en vez de desbordar.
+- El botón de editar (lápiz) no tenía fondo y era casi invisible al lado del de eliminar (que sí tiene chip rosado). Ahora los botones de ícono `btn-ghost` tienen un fondo gris suave, igual de visibles que el de eliminar.
+- Números grandes del resumen final (`rf-val`) ahora usan la tipografía serif de marca (`DM Serif Display`) en vez de la sans en negrita — más identidad visual.
+
+Snapshot completo de esta versión en `versions/v3/`.
