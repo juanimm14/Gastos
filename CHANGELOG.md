@@ -34,3 +34,23 @@ Fix de un bug de overflow reportado (algunos botones de eliminar se salían de l
 - Números grandes del resumen final (`rf-val`) ahora usan la tipografía serif de marca (`DM Serif Display`) en vez de la sans en negrita — más identidad visual.
 
 Snapshot completo de esta versión en `versions/v3/`.
+
+## v4 — 2026-08-06
+Indicador de versión + Dashboard separado.
+
+- Agregado un badge chiquito abajo a la izquierda (`v4`) para confirmar de un vistazo qué versión está viendo el navegador — útil porque el service worker cachea contenido.
+- Nueva pestaña **Dashboard**, separada de la carga de gastos: selector "Gastos / Dashboard" en la tira del mes.
+  - **Gastos**: solo secciones, extras y cobrado — la pantalla de carga quedó más liviana.
+  - **Dashboard**: resumen final + los 3 gráficos (por sección, cobrado vs gastos, pagado vs pendiente), con título grande en serif.
+- La vista elegida se guarda en `localStorage` y se mantiene al cambiar de mes.
+
+Snapshot completo de esta versión en `versions/v4/`.
+
+## v5 — 2026-08-06
+Investigación de un corte horizontal reportado por captura de pantalla.
+
+- El screenshot mostrado era de la **v3 en producción** (sin badge ni Dashboard todavía — esos son de v4, aún no subida).
+- Probé reproducir el corte inyectando el HTML/CSS real de la app en la página en vivo a 700px, 960px y 1265px de ancho, con datos representativos (montos grandes, badges, etc.) — no logré reproducir overflow en ningún caso; la hipótesis más probable es un glitch transitorio del reflow al cargar las tipografías.
+- Agregado `overflow-x: hidden` + `max-width: 100%` en `html, body` como red de seguridad: nada en el diseño necesita scroll horizontal de página completa (la barra de resumen ya tiene su propio scroll interno), así que esto elimina la categoría de bug sin costo visual, se haya encontrado la causa exacta o no.
+
+Snapshot completo de esta versión en `versions/v5/`.
