@@ -2,48 +2,17 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mis Gastos</title>
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mis Gastos">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
-
-<!--
-╔══════════════════════════════════════════════════════════════════╗
-║              INSTRUCCIONES DE CONFIGURACIÓN                       ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                  ║
-║  1. FIREBASE CONSOLE → https://console.firebase.google.com       ║
-║     • Crear proyecto nuevo                                       ║
-║     • Agregar app web (</>)                                      ║
-║     • Copiar la config y pegar en firebaseConfig abajo           ║
-║                                                                  ║
-║  2. AUTENTICACIÓN                                                ║
-║     • Authentication → Sign-in method → Email/Password → ON     ║
-║     • Authentication → Users → Add user → tu email + contraseña ║
-║                                                                  ║
-║  3. BASE DE DATOS                                                ║
-║     • Firestore Database → Crear base de datos → Modo producción ║
-║                                                                  ║
-║  4. REGLAS DE SEGURIDAD (Firestore → Rules → Publicar)          ║
-║     ─────────────────────────────────────────────────           ║
-║     rules_version = '2';                                         ║
-║     service cloud.firestore {                                    ║
-║       match /databases/{database}/documents {                    ║
-║         match /{document=**} {                                   ║
-║           allow read, write: if request.auth != null             ║
-║             && request.auth.uid == "TU_UID_AQUI";               ║
-║         }                                                        ║
-║       }                                                          ║
-║     }                                                            ║
-║     ─────────────────────────────────────────────────           ║
-║     Para obtener tu UID: logearte → consola F12 →               ║
-║       firebase.auth().currentUser.uid                            ║
-║                                                                  ║
-║  5. GITHUB PAGES                                                 ║
-║     • Crear repo → subir este archivo como index.html           ║
-║     • Settings → Pages → Branch: main → Save                    ║
-║                                                                  ║
-╚══════════════════════════════════════════════════════════════════╝
--->
 
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -76,6 +45,8 @@
     font-size: 18px;
     line-height: 1.5;
     min-height: 100vh;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   /* ─── AUTH ─────────────────────────────────────── */
@@ -471,7 +442,7 @@
   /* ─── TOAST ─────────────────────────────────────── */
   #toast {
     position: fixed;
-    bottom: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%) translateY(80px);
     background: #1a1a1a;
@@ -577,18 +548,19 @@
     /* Badge pequeño */
     .badge { font-size: 12px; padding: 2px 7px; border-radius: 8px; }
 
-    /* Botones de acción mínimos */
-    .btn-icon { font-size: 13px; padding: 3px 6px; }
+    /* Botones de acción: mínimo 34px para que el dedo no falle el tap */
+    .btn-icon { font-size: 13px; padding: 8px 10px; min-width: 34px; min-height: 34px; }
     .ic-acciones { gap: 2px; padding: 4px 6px; }
-    .btn-sm { font-size: 13px; padding: 5px 10px; }
-    .btn { font-size: 15px; padding: 8px 14px; }
+    .btn-sm { font-size: 13px; padding: 7px 12px; min-height: 34px; }
+    .btn { font-size: 15px; padding: 8px 14px; min-height: 34px; }
 
     /* Add row */
     .add-row { padding: 5px 8px; gap: 4px; }
-    .add-row input, .add-row select { font-size: 14px; padding: 5px 8px; }
+    /* font-size 16px: por debajo de eso Safari/algunos Android hacen zoom automático al enfocar */
+    .add-row input, .add-row select { font-size: 16px; padding: 6px 8px; }
 
     /* Inputs modales */
-    input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { font-size: 15px; padding: 9px 11px; }
+    input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { font-size: 16px; padding: 9px 11px; }
 
     /* Resumen final */
     .rf-grid { grid-template-columns: 1fr 1fr; }
@@ -729,6 +701,12 @@ const firebaseConfig = {
 const fapp = initializeApp(firebaseConfig);
 const auth = getAuth(fapp);
 const db   = getFirestore(fapp);
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
 
 // ── Constantes ────────────────────────────────────────
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
