@@ -222,6 +222,39 @@
     color: var(--text);
   }
 
+  .view-tabs {
+    display: flex;
+    gap: 3px;
+    margin-left: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px;
+    flex-shrink: 0;
+  }
+
+  .view-tab {
+    border: none;
+    background: transparent;
+    padding: 5px 15px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-soft);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .view-tab:hover { color: var(--text); }
+  .view-tab.active { background: var(--accent); color: white; }
+
+  .dash-titulo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    margin-bottom: 16px;
+  }
+
   /* ─── RESUMEN BAR ───────────────────────────────── */
   .resumen-bar {
     background: var(--surface);
@@ -460,6 +493,18 @@
 
   #toast.show { transform: translateX(-50%) translateY(0); }
 
+  #version-badge {
+    position: fixed;
+    left: calc(8px + env(safe-area-inset-left));
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    font-size: 10px;
+    color: var(--text-soft);
+    opacity: 0.45;
+    z-index: 50;
+    pointer-events: none;
+    letter-spacing: 0.03em;
+  }
+
   /* ─── LOADING ───────────────────────────────────── */
   .loading-wrap {
     display: none;
@@ -522,6 +567,9 @@
     .mes-full { font-size: 18px; }
     .mes-pill { font-size: 12px; padding: 2px 10px; }
     .mes-strip { padding-top: 5px; padding-bottom: 5px; gap: 6px; }
+    .view-tabs { margin-left: 0; width: 100%; order: 3; }
+    .view-tab { flex: 1; padding: 6px 10px; font-size: 12px; text-align: center; }
+    .dash-titulo { font-size: 20px; margin-bottom: 10px; }
 
     /* Resumen bar muy compacto */
     .resumen-bar { padding: 5px 12px; flex-wrap: nowrap; overflow-x: auto; gap: 0; }
@@ -627,6 +675,10 @@
       <button class="mes-btn" onclick="cambiarMes(1)">›</button>
     </div>
     <span class="mes-full" id="mes-full">—</span>
+    <div class="view-tabs" id="view-tabs">
+      <button class="view-tab" data-view="gastos" onclick="cambiarVista('gastos')">Gastos</button>
+      <button class="view-tab" data-view="dashboard" onclick="cambiarVista('dashboard')">Dashboard</button>
+    </div>
   </div>
 
   <div class="resumen-bar" id="resumen-bar">
@@ -656,6 +708,7 @@
 </div>
 
 <div id="toast"></div>
+<div id="version-badge">v4</div>
 
 <div class="loading-wrap" id="loading">
   <div class="spinner"></div>
@@ -730,6 +783,7 @@ const S = {
   year:  new Date().getFullYear(),
   month: new Date().getMonth(),
   data:  null,
+  view:  localStorage.getItem("gastos-view") === "dashboard" ? "dashboard" : "gastos",
 };
 
 let saveTimer = null;
@@ -881,6 +935,18 @@ window.cambiarMes = (d) => {
   cargarMes();
 };
 
+window.cambiarVista = (v) => {
+  S.view = v;
+  localStorage.setItem("gastos-view", v);
+  render();
+};
+
+function syncViewTabs() {
+  document.querySelectorAll(".view-tab").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === S.view);
+  });
+}
+
 // ── Render ────────────────────────────────────────────
 function render() {
   // Header mes
@@ -920,33 +986,40 @@ function render() {
   q("rb-pendiente").textContent= ars(pend);
   q("rb-quedan").style.color   = quedan >= 0 ? "var(--green)" : "var(--red)";
 
-  // Secciones
   const main = q("main");
   main.innerHTML = "";
 
-  S.data.secciones.forEach((sec, si) => {
-    main.appendChild(buildSeccion(sec, si));
-  });
+  if (S.view === "dashboard") {
+    const nom = MESES[S.month];
+    const tit = ce("div");
+    tit.className = "dash-titulo";
+    tit.textContent = "Dashboard — " + nom + " " + S.year;
+    main.appendChild(tit);
 
-  // Botón nueva sección
-  const b = ce("button");
-  b.className = "btn btn-ghost btn-sm";
-  b.style.cssText = "margin-bottom:14px;";
-  b.textContent = "+ Nueva sección";
-  b.onclick = nuevaSeccion;
-  main.appendChild(b);
+    main.appendChild(buildResumen(tot, totalIngresos, quedan));
+    main.appendChild(buildGraficos(tot, totalIngresos, quedan, pag, pend));
+  } else {
+    // Secciones
+    S.data.secciones.forEach((sec, si) => {
+      main.appendChild(buildSeccion(sec, si));
+    });
 
-  // Ingresos Extra
-  main.appendChild(buildExtras());
+    // Botón nueva sección
+    const b = ce("button");
+    b.className = "btn btn-ghost btn-sm";
+    b.style.cssText = "margin-bottom:14px;";
+    b.textContent = "+ Nueva sección";
+    b.onclick = nuevaSeccion;
+    main.appendChild(b);
 
-  // Cobrado
-  main.appendChild(buildCobrado());
+    // Ingresos Extra
+    main.appendChild(buildExtras());
 
-  // Resumen
-  main.appendChild(buildResumen(tot, totalIngresos, quedan));
+    // Cobrado
+    main.appendChild(buildCobrado());
+  }
 
-  // Gráficos
-  main.appendChild(buildGraficos(tot, totalIngresos, quedan, pag, pend));
+  syncViewTabs();
 }
 
 function esSeccionDesplegable(sec) {
