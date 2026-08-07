@@ -61,3 +61,12 @@ El badge de versión estaba escondido (esquina inferior izquierda, letra chica, 
 - Movido el badge de versión al lado del título "Mis Gastos" en el header, como una píldora azul bien visible (`v6`), en vez de una marca de agua tenue en una esquina.
 
 Snapshot completo de esta versión en `versions/v6/`.
+
+## v7 — 2026-08-06
+Bug real confirmado con captura del celular (APK) y de la web: el botón de eliminar se salía de la tarjeta.
+
+- **Causa**: la columna de acciones (editar+eliminar) quedó fijada en 66px (desktop) / 60px (mobile) en el fix de v3, pero los dos botones con su padding necesitan ~68-70px — no entraban, y al no poder achicarse (los botones tienen `min-width`), se salían de la columna y de la tarjeta. Pasaba en escritorio y en mobile, por eso se veía tanto en la web como en la APK.
+- **Fix**: columna de acciones ampliada a 86px (desktop) / 84px (mobile).
+- Verificado con medición real (no estimada) inyectando el HTML/CSS actualizado en la página en vivo: 0px de desborde en 1280px y en 375px (ancho de celular típico).
+
+Snapshot completo de esta versión en `versions/v7/`.
